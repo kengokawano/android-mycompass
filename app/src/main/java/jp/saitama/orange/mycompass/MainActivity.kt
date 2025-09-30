@@ -13,6 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import jp.saitama.orange.mycompass.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,8 +24,30 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
-                CompassApp()
+                AppNavigation()
             }
+        }
+    }
+}
+
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "compass") {
+        composable("compass") {
+            CompassApp(
+                onNavigateToMap = {
+                    navController.navigate("map")
+                }
+            )
+        }
+        composable("map") {
+            MapScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
@@ -30,6 +55,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompassApp(
+    onNavigateToMap: () -> Unit,
     viewModel: CompassViewModel = viewModel()
 ) {
     val azimuth by viewModel.azimuth.collectAsState()
@@ -47,7 +73,7 @@ fun CompassApp(
             TopAppBar(
                 title = { Text("Compass App") },
                 actions = {
-                    IconButton(onClick = { /* TODO: Open map */ }) {
+                    IconButton(onClick = onNavigateToMap) {
                         Icon(
                             imageVector = Icons.Default.Map,
                             contentDescription = "Open Map"

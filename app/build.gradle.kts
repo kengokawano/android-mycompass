@@ -56,6 +56,15 @@ dependencies {
     // Material Icons Extended
     implementation("androidx.compose.material:material-icons-extended:1.7.6")
 
+    // OSMDroid for OpenStreetMap
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+
+    // Navigation
+    implementation("androidx.navigation:navigation-compose:2.8.5")
+
+    // Accompanist Permissions
+    implementation("com.google.accompanist:accompanist-permissions:0.36.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
