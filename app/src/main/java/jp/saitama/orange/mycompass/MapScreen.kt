@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -112,7 +113,8 @@ suspend fun searchLocation(query: String): List<SearchResult> {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MapScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    destinationViewModel: DestinationViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -125,6 +127,8 @@ fun MapScreen(
     var searchResults by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var rateLimitMessage by remember { mutableStateOf("") }
+
+    val destinations by destinationViewModel.destinations.collectAsState()
 
     val locationPermissions = rememberMultiplePermissionsState(
         listOf(
@@ -264,59 +268,124 @@ fun MapScreen(
                 )
             }
 
-                // Bottom input section (responsive height)
+                // Bottom input section with destinations list
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.surface),
                     tonalElevation = 8.dp
                 ) {
-                    Column(
+                    Row(
                         modifier = Modifier
                             .padding(16.dp)
                             .fillMaxWidth()
                     ) {
-                        // Display coordinates
-                        selectedLocation?.let { location ->
-                            Text(
-                                text = "Latitude: ${String.format("%.6f", location.latitude)}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = "Longitude: ${String.format("%.6f", location.longitude)}",
-                                style = MaterialTheme.typography.bodyMedium
+                        // Left side: Input section
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
+                        ) {
+                            // Display coordinates
+                            selectedLocation?.let { location ->
+                                Text(
+                                    text = "Lat: ${String.format("%.6f", location.latitude)}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    text = "Lon: ${String.format("%.6f", location.longitude)}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            // Name input
+                            OutlinedTextField(
+                                value = destinationName,
+                                onValueChange = { destinationName = it },
+                                label = { Text("Name") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
+
+                            // Register button
+                            Button(
+                                onClick = {
+                                    selectedLocation?.let { location ->
+                                        if (destinationName.isNotBlank()) {
+                                            val added = destinationViewModel.addDestination(
+                                                destinationName,
+                                                location.latitude,
+                                                location.longitude
+                                            )
+                                            if (added) {
+                                                destinationName = ""
+                                                selectedLocation = null
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                enabled = selectedLocation != null &&
+                                         destinationName.isNotBlank() &&
+                                         destinationViewModel.canAddMore()
+                            ) {
+                                Text("Register (${destinations.size}/3)")
+                            }
                         }
 
-                        // Name input
-                        OutlinedTextField(
-                            value = destinationName,
-                            onValueChange = { destinationName = it },
-                            label = { Text("Destination Name") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
+                        // Right side: Destinations list
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 8.dp)
+                        ) {
+                            Text(
+                                text = "Destinations",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Register button
-                        Button(
-                            onClick = {
-                                selectedLocation?.let { location ->
-                                    if (destinationName.isNotBlank()) {
-                                        // TODO: Save destination
-                                        onNavigateBack()
+                            destinations.forEach { destination ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = destination.name,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        IconButton(
+                                            onClick = { destinationViewModel.removeDestination(destination.id) },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Delete",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                     }
                                 }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            enabled = selectedLocation != null && destinationName.isNotBlank()
-                        ) {
-                            Text("Register Destination")
+                            }
                         }
                     }
                 }
