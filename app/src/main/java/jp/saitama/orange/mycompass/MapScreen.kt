@@ -44,6 +44,30 @@ data class SearchResult(
     val lon: Double
 )
 
+object SearchRateLimiter {
+    private var lastSearchTime = 0L
+    private const val MIN_SEARCH_INTERVAL = 5000L // 5 seconds
+
+    fun canSearch(): Boolean {
+        val currentTime = System.currentTimeMillis()
+        return currentTime - lastSearchTime >= MIN_SEARCH_INTERVAL
+    }
+
+    fun getRemainingTime(): Long {
+        val currentTime = System.currentTimeMillis()
+        val elapsed = currentTime - lastSearchTime
+        return if (elapsed < MIN_SEARCH_INTERVAL) {
+            (MIN_SEARCH_INTERVAL - elapsed) / 1000
+        } else {
+            0L
+        }
+    }
+
+    fun recordSearch() {
+        lastSearchTime = System.currentTimeMillis()
+    }
+}
+
 suspend fun searchLocation(query: String): List<SearchResult> {
     return withContext(Dispatchers.IO) {
         try {
@@ -100,6 +124,7 @@ fun MapScreen(
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
+    var rateLimitMessage by remember { mutableStateOf("") }
 
     val locationPermissions = rememberMultiplePermissionsState(
         listOf(
@@ -320,14 +345,21 @@ fun MapScreen(
                             if (searchQuery.isNotEmpty()) {
                                 Button(
                                     onClick = {
-                                        println("Search button clicked with query: $searchQuery")
-                                        scope.launch {
-                                            isSearching = true
-                                            println("Starting search...")
-                                            val results = searchLocation(searchQuery)
-                                            searchResults = results
-                                            println("Search completed. Results: ${results.size}")
-                                            isSearching = false
+                                        if (SearchRateLimiter.canSearch()) {
+                                            println("Search button clicked with query: $searchQuery")
+                                            rateLimitMessage = ""
+                                            scope.launch {
+                                                isSearching = true
+                                                println("Starting search...")
+                                                val results = searchLocation(searchQuery)
+                                                searchResults = results
+                                                println("Search completed. Results: ${results.size}")
+                                                isSearching = false
+                                                SearchRateLimiter.recordSearch()
+                                            }
+                                        } else {
+                                            val remaining = SearchRateLimiter.getRemainingTime()
+                                            rateLimitMessage = "Please wait ${remaining} seconds"
                                         }
                                     }
                                 ) {
@@ -342,14 +374,31 @@ fun MapScreen(
                         keyboardActions = androidx.compose.foundation.text.KeyboardActions(
                             onSearch = {
                                 if (searchQuery.isNotEmpty()) {
-                                    scope.launch {
-                                        isSearching = true
-                                        searchResults = searchLocation(searchQuery)
-                                        isSearching = false
+                                    if (SearchRateLimiter.canSearch()) {
+                                        rateLimitMessage = ""
+                                        scope.launch {
+                                            isSearching = true
+                                            searchResults = searchLocation(searchQuery)
+                                            isSearching = false
+                                            SearchRateLimiter.recordSearch()
+                                        }
+                                    } else {
+                                        val remaining = SearchRateLimiter.getRemainingTime()
+                                        rateLimitMessage = "Please wait ${remaining} seconds"
                                     }
                                 }
                             }
                         )
+                    )
+                }
+
+                // Rate limit message
+                if (rateLimitMessage.isNotEmpty()) {
+                    Text(
+                        text = rateLimitMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                     )
                 }
 
