@@ -18,6 +18,7 @@ import kotlin.math.abs
 @Composable
 fun CompassMeter(
     azimuth: Float,
+    destinationInfoList: List<DestinationInfo> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -29,8 +30,11 @@ fun CompassMeter(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Meter with vertical lines
-        CompassMeterBar(azimuth = azimuth)
+        // Meter with vertical lines and destination markers
+        CompassMeterBar(
+            azimuth = azimuth,
+            destinationInfoList = destinationInfoList
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -41,6 +45,12 @@ fun CompassMeter(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
+
+        // Display destination info
+        if (destinationInfoList.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            DestinationInfoDisplay(destinationInfoList = destinationInfoList)
+        }
     }
 }
 
@@ -75,6 +85,7 @@ fun DirectionLabels(azimuth: Float) {
 @Composable
 fun CompassMeterBar(
     azimuth: Float,
+    destinationInfoList: List<DestinationInfo> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -123,6 +134,35 @@ fun CompassMeterBar(
                 }
             }
 
+            // Draw destination markers
+            destinationInfoList.forEach { destInfo ->
+                val relativeBearing = destInfo.bearing - azimuth
+                val normalizedBearing = when {
+                    relativeBearing > 180 -> relativeBearing - 360
+                    relativeBearing < -180 -> relativeBearing + 360
+                    else -> relativeBearing
+                }
+
+                if (normalizedBearing in -degreesRange.toFloat()..degreesRange.toFloat()) {
+                    val x = centerX + (normalizedBearing * pixelsPerDegree)
+
+                    // Draw destination marker
+                    drawCircle(
+                        color = Color.Blue,
+                        radius = 8f,
+                        center = Offset(x, height * 0.2f)
+                    )
+
+                    // Draw line from marker to bottom
+                    drawLine(
+                        color = Color.Blue,
+                        start = Offset(x, height * 0.2f + 8f),
+                        end = Offset(x, height * 0.8f),
+                        strokeWidth = 2f
+                    )
+                }
+            }
+
             // Draw center indicator (fixed red line)
             drawLine(
                 color = Color.Red,
@@ -131,5 +171,51 @@ fun CompassMeterBar(
                 strokeWidth = 3f
             )
         }
+    }
+}
+
+@Composable
+fun DestinationInfoDisplay(destinationInfoList: List<DestinationInfo>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        Text(
+            text = "登録地点",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        destinationInfoList.forEach { destInfo ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = destInfo.destination.name,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "${destInfo.bearing.toInt()}° / ${formatDistance(destInfo.distance)}",
+                    fontSize = 16.sp,
+                    color = Color.Blue
+                )
+            }
+        }
+    }
+}
+
+private fun formatDistance(distance: Float): String {
+    return when {
+        distance < 1000 -> "${distance.toInt()}m"
+        distance < 10000 -> "%.1fkm".format(distance / 1000)
+        else -> "${(distance / 1000).toInt()}km"
     }
 }

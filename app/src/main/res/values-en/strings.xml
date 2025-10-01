@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">Compass App</string>
+
+    <!-- About Screen -->
+    <string name="about_title">About</string>
+    <string name="about_version">Version 1.0</string>
+    <string name="about_features">Features</string>
+    <string name="about_feature1">Real-time compass display</string>
+    <string name="about_feature2">Register destinations (max 3)</string>
+    <string name="about_feature3">Show direction and distance</string>
+    <string name="about_feature4">Search and select locations on map</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_developer_location">Saitama, Japan</string>
+    <string name="about_developer_name">Orange Lab</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_general">General</string>
+    <string name="settings_notifications">Enable notifications</string>
+    <string name="settings_vibration">Vibration</string>
+    <string name="settings_display">Display</string>
+    <string name="settings_distance_unit">Distance unit</string>
+    <string name="settings_unit_meter">Meter</string>
+    <string name="settings_unit_mile">Mile</string>
+    <string name="settings_data">Data Management</string>
+    <string name="settings_clear_destinations">Clear all destinations</string>
+
+    <!-- Common -->
+    <string name="back">Back</string>
+</resources>

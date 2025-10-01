@@ -65,6 +65,9 @@ dependencies {
     // Accompanist Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
 
+    // Google Play Services Location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

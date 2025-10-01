@@ -114,7 +114,7 @@ suspend fun searchLocation(query: String): List<SearchResult> {
 @Composable
 fun MapScreen(
     onNavigateBack: () -> Unit,
-    destinationViewModel: DestinationViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    destinationViewModel: DestinationViewModel
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -286,20 +286,6 @@ fun MapScreen(
                                 .weight(1f)
                                 .padding(end = 8.dp)
                         ) {
-                            // Display coordinates
-                            selectedLocation?.let { location ->
-                                Text(
-                                    text = "Lat: ${String.format("%.6f", location.latitude)}",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    text = "Lon: ${String.format("%.6f", location.longitude)}",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-
                             // Name input
                             OutlinedTextField(
                                 value = destinationName,
@@ -336,6 +322,20 @@ fun MapScreen(
                                          destinationViewModel.canAddMore()
                             ) {
                                 Text("Register (${destinations.size}/3)")
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Display coordinates
+                            selectedLocation?.let { location ->
+                                Text(
+                                    text = "Lat: ${String.format("%.6f", location.latitude)}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    text = "Lon: ${String.format("%.6f", location.longitude)}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                             }
                         }
 

@@ -1,3 +1,30 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">コンパスアプリ</string>
+
+    <!-- About Screen -->
+    <string name="about_title">About</string>
+    <string name="about_version">Version 1.0</string>
+    <string name="about_features">機能</string>
+    <string name="about_feature1">リアルタイムコンパス表示</string>
+    <string name="about_feature2">目的地の登録（最大3件）</string>
+    <string name="about_feature3">目的地への方角と距離表示</string>
+    <string name="about_feature4">地図から場所を検索・選択</string>
+    <string name="about_developer">開発者</string>
+    <string name="about_developer_location">埼玉県さいたま市</string>
+    <string name="about_developer_name">Orange Lab</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">設定</string>
+    <string name="settings_general">一般設定</string>
+    <string name="settings_notifications">通知を有効にする</string>
+    <string name="settings_vibration">バイブレーション</string>
+    <string name="settings_display">表示設定</string>
+    <string name="settings_distance_unit">距離の単位</string>
+    <string name="settings_unit_meter">メートル</string>
+    <string name="settings_unit_mile">マイル</string>
+    <string name="settings_data">データ管理</string>
+    <string name="settings_clear_destinations">登録地点をすべて削除</string>
+
+    <!-- Common -->
+    <string name="back">戻る</string>
 </resources>

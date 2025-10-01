@@ -6,7 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,16 +36,43 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
+    // Share ViewModels across navigation
+    val compassViewModel: CompassViewModel = viewModel()
+    val destinationViewModel: DestinationViewModel = viewModel()
+
     NavHost(navController = navController, startDestination = "compass") {
         composable("compass") {
             CompassApp(
                 onNavigateToMap = {
                     navController.navigate("map")
-                }
+                },
+                onNavigateToAbout = {
+                    navController.navigate("about")
+                },
+                onNavigateToSettings = {
+                    navController.navigate("settings")
+                },
+                compassViewModel = compassViewModel,
+                destinationViewModel = destinationViewModel
             )
         }
         composable("map") {
             MapScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                destinationViewModel = destinationViewModel
+            )
+        }
+        composable("about") {
+            AboutScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        composable("settings") {
+            SettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
@@ -56,15 +85,28 @@ fun AppNavigation() {
 @Composable
 fun CompassApp(
     onNavigateToMap: () -> Unit,
-    viewModel: CompassViewModel = viewModel()
+    onNavigateToAbout: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    compassViewModel: CompassViewModel,
+    destinationViewModel: DestinationViewModel
 ) {
-    val azimuth by viewModel.azimuth.collectAsState()
-    val sensorAvailable by viewModel.sensorAvailable.collectAsState()
+    val azimuth by compassViewModel.azimuth.collectAsState()
+    val sensorAvailable by compassViewModel.sensorAvailable.collectAsState()
+    val currentLocation by compassViewModel.currentLocation.collectAsState()
+    val destinationInfoList by compassViewModel.destinationInfoList.collectAsState()
+    val destinations by destinationViewModel.destinations.collectAsState()
+
+    // Update destinations in compass viewmodel when location or destinations change
+    LaunchedEffect(currentLocation, destinations) {
+        if (currentLocation != null) {
+            compassViewModel.updateDestinations(destinations)
+        }
+    }
 
     DisposableEffect(Unit) {
-        viewModel.startListening()
+        compassViewModel.startListening()
         onDispose {
-            viewModel.stopListening()
+            compassViewModel.stopListening()
         }
     }
 
@@ -77,6 +119,18 @@ fun CompassApp(
                         Icon(
                             imageVector = Icons.Default.Map,
                             contentDescription = "Open Map"
+                        )
+                    }
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
+                        )
+                    }
+                    IconButton(onClick = onNavigateToAbout) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "About"
                         )
                     }
                 }
@@ -100,7 +154,10 @@ fun CompassApp(
                 )
             } else {
                 Spacer(modifier = Modifier.height(32.dp))
-                CompassMeter(azimuth = azimuth)
+                CompassMeter(
+                    azimuth = azimuth,
+                    destinationInfoList = destinationInfoList
+                )
             }
         }
     }
