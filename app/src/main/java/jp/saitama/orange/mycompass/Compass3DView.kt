@@ -99,40 +99,31 @@ fun Compass3DView(
 
     // Update rotation and position
     LaunchedEffect(azimuth, shouldUseAr) {
-        val targetRotation = -azimuth
-        currentRotation += (targetRotation - currentRotation) * lerpFactor
+        while (true) {
+            compassRing.value?.let { ring ->
+                if (shouldUseAr) {
+                    // ARモード: マーカーを実世界の方角に配置
+                    ring.rotation = Rotation(0f, 0f, 0f)
 
-        compassRing.value?.let { ring ->
-            if (shouldUseAr) {
-                // ARモード: マーカーを実世界の方角に配置
-                ring.rotation = Rotation(0f, 0f, 0f)
+                    markerNodes.forEachIndexed { index, marker ->
+                        val absoluteBearing = directions[index].first
+                        val relativeBearing = absoluteBearing - azimuth
+                        val radian = Math.toRadians(relativeBearing.toDouble())
+                        val radius = 2f
 
-                markerNodes.forEachIndexed { index, marker ->
-                    val absoluteBearing = directions[index].first
-                    val relativeBearing = absoluteBearing - azimuth
-                    val radian = Math.toRadians(relativeBearing.toDouble())
-                    val radius = 2f
+                        val x = (radius * sin(radian)).toFloat()
+                        val z = -(radius * cos(radian)).toFloat()
 
-                    val x = (radius * sin(radian)).toFloat()
-                    val z = -(radius * cos(radian)).toFloat()
-
-                    marker.position = Position(x, 0f, z)
-                }
-            } else {
-                // 通常モード: リング全体を回転
-                ring.rotation = Rotation(0f, currentRotation, 0f)
-
-                markerNodes.forEachIndexed { index, marker ->
-                    val degree = directions[index].first
-                    val radian = Math.toRadians(degree.toDouble())
-                    val radius = 5f
-
-                    val x = (radius * sin(radian)).toFloat()
-                    val z = -(radius * cos(radian)).toFloat()
-
-                    marker.position = Position(x, 0f, z)
+                        marker.position = Position(x, 0f, z)
+                    }
+                } else {
+                    // 通常モード: リング全体を回転（補間あり）
+                    val targetRotation = -azimuth
+                    currentRotation += (targetRotation - currentRotation) * lerpFactor
+                    ring.rotation = Rotation(0f, currentRotation, 0f)
                 }
             }
+            kotlinx.coroutines.delay(16) // ~60fps
         }
     }
 
