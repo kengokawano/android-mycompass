@@ -41,13 +41,15 @@ fun Compass3DView(
 ) {
     val context = LocalContext.current
     var currentRotation by remember { mutableStateOf(0f) }
+    var smoothedArAzimuth by remember { mutableStateOf(0f) } // AR用の平滑化された方位
     val isArAvailable = remember { checkArAvailability(context) }
 
     // Camera permission for AR
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
     // 補間係数
-    val lerpFactor = 0.1f
+    val lerpFactor = 0.2f // 通常モード用 (追従性UP)
+    val arLerpFactor = 0.1f // ARモード用 (プルプル抑制)
 
     // Request camera permission when AR is enabled
     LaunchedEffect(arEnabled) {
@@ -98,18 +100,20 @@ fun Compass3DView(
     }
 
     // Update rotation and position
-    LaunchedEffect(azimuth, shouldUseAr) {
+    val latestAzimuth by rememberUpdatedState(azimuth)
+    LaunchedEffect(shouldUseAr) {
         while (true) {
             compassRing.value?.let { ring ->
                 if (shouldUseAr) {
-                    // ARモード: マーカーを実世界の方角に配置
+                    // ARモード: 方位を平滑化
+                    smoothedArAzimuth += (latestAzimuth - smoothedArAzimuth) * arLerpFactor
                     ring.rotation = Rotation(0f, 0f, 0f)
 
                     markerNodes.forEachIndexed { index, marker ->
                         val absoluteBearing = directions[index].first
-                        val relativeBearing = absoluteBearing - azimuth
+                        val relativeBearing = absoluteBearing - smoothedArAzimuth
                         val radian = Math.toRadians(relativeBearing.toDouble())
-                        val radius = 2f
+                        val radius = 4f // 距離を遠くする
 
                         val x = (radius * sin(radian)).toFloat()
                         val z = -(radius * cos(radian)).toFloat()
@@ -118,7 +122,7 @@ fun Compass3DView(
                     }
                 } else {
                     // 通常モード: リング全体を回転（補間あり）
-                    val targetRotation = -azimuth
+                    val targetRotation = -latestAzimuth
                     currentRotation += (targetRotation - currentRotation) * lerpFactor
                     ring.rotation = Rotation(0f, currentRotation, 0f)
                 }
