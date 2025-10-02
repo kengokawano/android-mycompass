@@ -136,16 +136,42 @@ app/src/main/res/
 ### センサーのブレ対策
 試した方法：
 1. **閾値フィルタ** - 2度以上の変化のみ反映 → 大きなブレが発生
-2. **補間（Lerp）** - 目標値に徐々に近づける → 効果的（採用）
+2. **補間（Lerp）** - 目標値に徐々に近づける → 効果的（採用）。通常モードとARモードで係数を調整し、追従性と滑らかさのバランスを取った。
 
-実装：
+実装方針：
+- `LaunchedEffect`内で無限ループを回し、約60fpsでUIを更新。
+- `rememberUpdatedState`で最新の方位角を取得し、`LaunchedEffect`の不要な再起動を防止。
+- **通常モード**では、コンパスリング全体の回転角度に対して補間を適用。追従性を少し重視。
+- **ARモード**では、各マーカーの位置計算に使う方位角そのものを補間し、滑らかさを重視。
+
+実装（概念）：
 ```kotlin
-val targetRotation = -azimuth
-currentRotation += (targetRotation - currentRotation) * 0.0001f
-compassRing?.rotation = Rotation(0f, currentRotation, 0f)
+// 補間係数
+val lerpFactor = 0.2f     // 通常モード用 (追従性重視)
+val arLerpFactor = 0.1f  // ARモード用 (滑らかさ重視)
+
+// 最新の方位角を取得
+val latestAzimuth by rememberUpdatedState(azimuth)
+
+// UI更新ループ
+LaunchedEffect(Unit) {
+    while(true) {
+        if (isArMode) {
+            // ARモード: 方位角を平滑化して利用
+            smoothedArAzimuth += (latestAzimuth - smoothedArAzimuth) * arLerpFactor
+            // smoothedArAzimuth を使ってマーカー位置を計算
+        } else {
+            // 通常モード: 回転角度を平滑化
+            val targetRotation = -latestAzimuth
+            currentRotation += (targetRotation - currentRotation) * lerpFactor
+            // currentRotation を使ってリングを回転
+        }
+        delay(16)
+    }
+}
 ```
 
-係数0.0001fで非常にスムーズな動きを実現。
+係数`0.2f`（通常）と`0.1f`（AR）で、それぞれのモードに適した追従性と滑らかさを実現。
 
 ### SceneViewについて
 - Filamentのハイレベルラッパー
