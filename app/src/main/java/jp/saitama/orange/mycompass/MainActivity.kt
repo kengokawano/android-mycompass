@@ -153,7 +153,17 @@ fun CompassApp(
                     modifier = Modifier.padding(16.dp)
                 )
             } else {
-                Spacer(modifier = Modifier.height(32.dp))
+                // 3D Compass View
+                Compass3DView(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp),
+                    azimuth = azimuth
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 2D Compass Meter
                 CompassMeter(
                     azimuth = azimuth,
                     destinationInfoList = destinationInfoList
