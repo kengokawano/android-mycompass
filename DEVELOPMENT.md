@@ -42,10 +42,9 @@
 - FusedLocationProviderClient（現在地取得）
 - Google Play Services Location
 
-### 地図・検索・3D
+### 地図・検索
 - OSMDroid（OpenStreetMap）
 - Nominatim API（場所検索）
-- SceneView 2.2.1（3Dレンダリング）
 
 ### アーキテクチャ
 - MVVM
@@ -58,8 +57,7 @@
 app/src/main/java/jp/saitama/orange/mycompass/
 ├── MainActivity.kt              # メイン画面・ナビゲーション
 ├── CompassViewModel.kt          # コンパス・位置情報ロジック
-├── CompassMeter.kt              # 2Dコンパス表示
-├── Compass3DView.kt             # 3Dコンパス表示
+├── CompassMeter.kt              # コンパスUI
 ├── MapScreen.kt                 # 地図画面
 ├── DestinationViewModel.kt     # 目的地管理
 ├── Destination.kt               # 目的地データクラス
@@ -89,54 +87,10 @@ app/src/main/res/
 - [ ] ダークモード対応
 - [ ] アプリアイコンのカスタマイズ
 
-### 3D機能（実装済み）
-- [x] SceneViewによる3D空間表示
-- [x] 8方向マーカー配置（東西南北 + 副方角）
-- [x] 方位角連動回転
-- [x] 補間（Lerp）によるスムーズな動き（係数: 0.0001f）
-- [x] 時刻による背景色切り替え
-  - 昼（6-18時）: 水色 (#87CEEB)
-  - 夜（18-6時）: 濃いグレー (#404040)
-
-### 3D機能（今後の予定）
-- [ ] 方角マーカーの色分け（北: 赤、副方角: 青など）
-- [ ] 文字表示（N/E/S/W）
-- [ ] 目的地の3D表示
-- [ ] より詳細な背景テクスチャ（スカイボックス）
-
-### 災害対策機能（今後の予定）
-- [ ] オフライン地図対応（事前ダウンロード）
-- [ ] GPS単独測位（ネットワーク補正なし）
-- [ ] 目的地のローカル保存強化
-
-## 3D実装メモ
-
-### センサーのブレ対策
-試した方法：
-1. **閾値フィルタ** - 2度以上の変化のみ反映 → 大きなブレが発生
-2. **補間（Lerp）** - 目標値に徐々に近づける → 効果的（採用）
-
-実装：
-```kotlin
-val targetRotation = -azimuth
-currentRotation += (targetRotation - currentRotation) * 0.0001f
-compassRing?.rotation = Rotation(0f, currentRotation, 0f)
-```
-
-係数0.0001fで非常にスムーズな動きを実現。
-
-### SceneViewについて
-- Filamentのハイレベルラッパー
-- AndroidViewで簡単にCompose統合可能
-- プリミティブ図形（CubeNode等）標準搭載
-- 背景色設定: `setBackgroundColor(Color.toArgb())`
-
-### 電波なしで動く機能
-- ✅ コンパス（方位磁針センサー）
-- ✅ 3D表示
-- ✅ 昼夜の背景切り替え
-- ❌ 地図表示（要ネット）
-- ❌ 現在位置取得の補正（GPS単独は可）
+### 優先度：低（3D機能）
+- [ ] 3Dコンパス針（graphicsLayerで疑似3D）
+- [ ] 地球儀ビュー（Filament使用）
+- [ ] ARコンパスモード（ARCore）
 
 ## 3D機能実装の参考資料
 
