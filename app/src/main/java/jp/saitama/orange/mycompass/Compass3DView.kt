@@ -61,17 +61,19 @@ fun Compass3DView(
     // Create engine and nodes
     val engine = rememberEngine()
     val compassRing = remember { mutableStateOf<Node?>(null) }
+    val markerNodes = remember { mutableStateListOf<CubeNode>() }
+
+    // 方角の定義（絶対方位）
+    val directions = listOf(
+        Triple(0, "N", true), Triple(90, "E", true),
+        Triple(180, "S", true), Triple(270, "W", true),
+        Triple(45, "NE", false), Triple(135, "SE", false),
+        Triple(225, "SW", false), Triple(315, "NW", false)
+    )
 
     val nodes = rememberNodes {
         val ringNode = Node(engine = engine)
-
-        // 方角の定義
-        val directions = listOf(
-            Triple(0, "N", true), Triple(90, "E", true),
-            Triple(180, "S", true), Triple(270, "W", true),
-            Triple(45, "NE", false), Triple(135, "SE", false),
-            Triple(225, "SW", false), Triple(315, "NW", false)
-        )
+        markerNodes.clear()
 
         directions.forEach { (degree, _, _) ->
             val radian = Math.toRadians(degree.toDouble())
@@ -88,17 +90,50 @@ fun Compass3DView(
                 rotation = Rotation(0f, degree.toFloat(), 0f)
             }
             ringNode.addChildNode(marker)
+            markerNodes.add(marker)
         }
 
         compassRing.value = ringNode
         add(ringNode)
     }
 
-    // Update rotation
-    LaunchedEffect(azimuth) {
+    // Update rotation and position
+    LaunchedEffect(azimuth, shouldUseAr) {
         val targetRotation = -azimuth
         currentRotation += (targetRotation - currentRotation) * lerpFactor
-        compassRing.value?.rotation = Rotation(0f, currentRotation, 0f)
+
+        compassRing.value?.let { ring ->
+            if (shouldUseAr) {
+                // ARモード: マーカーを実世界の方角に配置
+                ring.rotation = Rotation(0f, 0f, 0f)
+
+                markerNodes.forEachIndexed { index, marker ->
+                    val absoluteBearing = directions[index].first
+                    val relativeBearing = absoluteBearing - azimuth
+                    val radian = Math.toRadians(relativeBearing.toDouble())
+                    val radius = 2f
+
+                    val x = (radius * sin(radian)).toFloat()
+                    val z = -(radius * cos(radian)).toFloat()
+
+                    marker.position = Position(x, 0f, z)
+                }
+            } else {
+                // 通常モード: リング全体を回転
+                ring.rotation = Rotation(0f, currentRotation, 0f)
+
+                markerNodes.forEachIndexed { index, marker ->
+                    val degree = directions[index].first
+                    val radian = Math.toRadians(degree.toDouble())
+                    val radius = 5f
+
+                    val x = (radius * sin(radian)).toFloat()
+                    val z = -(radius * cos(radian)).toFloat()
+
+                    marker.position = Position(x, 0f, z)
+                }
+            }
+        }
     }
 
     Column(modifier = modifier) {
