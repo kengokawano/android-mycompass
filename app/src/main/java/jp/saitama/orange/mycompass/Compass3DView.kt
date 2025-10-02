@@ -20,7 +20,7 @@ fun Compass3DView(
     var currentRotation by remember { mutableStateOf(0f) }
 
     // 補間係数（0.1 = ゆっくり、0.3 = 速め）
-    val lerpFactor = 0.0001f
+    val lerpFactor = 0.003f
 
     AndroidView(
         modifier = modifier,
