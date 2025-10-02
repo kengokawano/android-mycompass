@@ -15,11 +15,14 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    settingsViewModel: SettingsViewModel
 ) {
     var enableNotifications by remember { mutableStateOf(true) }
     var enableVibration by remember { mutableStateOf(true) }
     var distanceUnit by remember { mutableStateOf("meter") }
+
+    val arEnabled by settingsViewModel.arEnabled.collectAsState()
 
     Scaffold(
         topBar = {
@@ -108,6 +111,28 @@ fun SettingsScreen(
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
+                    // AR Mode Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.settings_ar_mode))
+                            Text(
+                                text = stringResource(R.string.settings_ar_description),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = arEnabled,
+                            onCheckedChange = { settingsViewModel.setArEnabled(it) }
+                        )
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
                     Text(text = stringResource(R.string.settings_distance_unit))
                     Spacer(modifier = Modifier.height(8.dp))
 

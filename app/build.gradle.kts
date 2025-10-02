@@ -37,6 +37,13 @@ android {
     buildFeatures {
         compose = true
     }
+
+    packaging {
+        jniLibs {
+            // Enable 16 KB page size alignment for native libraries
+            useLegacyPackaging = false
+        }
+    }
 }
 
 dependencies {
@@ -68,8 +75,11 @@ dependencies {
     // Google Play Services Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
-    // SceneView for 3D rendering
-    implementation("io.github.sceneview:sceneview:2.2.1")
+    // SceneView for 3D rendering (latest version with 16KB alignment support)
+    implementation("io.github.sceneview:sceneview:2.3.0")
+
+    // ARSceneView for AR rendering (latest version with 16KB alignment support)
+    implementation("io.github.sceneview:arsceneview:2.3.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

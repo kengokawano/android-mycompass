@@ -39,6 +39,7 @@ fun AppNavigation() {
     // Share ViewModels across navigation
     val compassViewModel: CompassViewModel = viewModel()
     val destinationViewModel: DestinationViewModel = viewModel()
+    val settingsViewModel: SettingsViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "compass") {
         composable("compass") {
@@ -53,7 +54,8 @@ fun AppNavigation() {
                     navController.navigate("settings")
                 },
                 compassViewModel = compassViewModel,
-                destinationViewModel = destinationViewModel
+                destinationViewModel = destinationViewModel,
+                settingsViewModel = settingsViewModel
             )
         }
         composable("map") {
@@ -75,7 +77,8 @@ fun AppNavigation() {
             SettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
-                }
+                },
+                settingsViewModel = settingsViewModel
             )
         }
     }
@@ -88,13 +91,15 @@ fun CompassApp(
     onNavigateToAbout: () -> Unit,
     onNavigateToSettings: () -> Unit,
     compassViewModel: CompassViewModel,
-    destinationViewModel: DestinationViewModel
+    destinationViewModel: DestinationViewModel,
+    settingsViewModel: SettingsViewModel
 ) {
     val azimuth by compassViewModel.azimuth.collectAsState()
     val sensorAvailable by compassViewModel.sensorAvailable.collectAsState()
     val currentLocation by compassViewModel.currentLocation.collectAsState()
     val destinationInfoList by compassViewModel.destinationInfoList.collectAsState()
     val destinations by destinationViewModel.destinations.collectAsState()
+    val arEnabled by settingsViewModel.arEnabled.collectAsState()
 
     // Update destinations in compass viewmodel when location or destinations change
     LaunchedEffect(currentLocation, destinations) {
@@ -158,7 +163,8 @@ fun CompassApp(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(300.dp),
-                    azimuth = azimuth
+                    azimuth = azimuth,
+                    arEnabled = arEnabled
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))

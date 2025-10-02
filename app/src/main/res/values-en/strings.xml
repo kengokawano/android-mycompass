@@ -19,6 +19,8 @@
     <string name="settings_notifications">Enable notifications</string>
     <string name="settings_vibration">Vibration</string>
     <string name="settings_display">Display</string>
+    <string name="settings_ar_mode">AR Mode</string>
+    <string name="settings_ar_description">Overlay 3D compass on camera view</string>
     <string name="settings_distance_unit">Distance unit</string>
     <string name="settings_unit_meter">Meter</string>
     <string name="settings_unit_mile">Mile</string>

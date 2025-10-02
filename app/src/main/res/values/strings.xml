@@ -19,6 +19,8 @@
     <string name="settings_notifications">通知を有効にする</string>
     <string name="settings_vibration">バイブレーション</string>
     <string name="settings_display">表示設定</string>
+    <string name="settings_ar_mode">ARモード</string>
+    <string name="settings_ar_description">カメラ映像に3Dコンパスを重ねて表示</string>
     <string name="settings_distance_unit">距離の単位</string>
     <string name="settings_unit_meter">メートル</string>
     <string name="settings_unit_mile">マイル</string>
