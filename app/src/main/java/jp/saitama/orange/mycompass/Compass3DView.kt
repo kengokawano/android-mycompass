@@ -47,7 +47,7 @@ fun Compass3DView(
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
     // 補間係数
-    val lerpFactor = 0.05f
+    val lerpFactor = 0.1f
 
     // Request camera permission when AR is enabled
     LaunchedEffect(arEnabled) {

@@ -29,6 +29,19 @@
 - [x] 文字列リソース化（日本語/英語対応）
 - [x] 地図画面レイアウト改善（ボタン配置変更）
 
+### v1.3 AR機能実装（2025年実装）
+- [x] ARモードのオン・オフ設定追加（設定画面）
+- [x] SettingsViewModel作成（AR状態管理）
+- [x] カメラパーミッション実装
+- [x] ARSceneとSceneの切り替え実装
+- [x] SceneView 2.3.0へアップデート
+- [x] Android 15+ 16KBページサイズアライメント対応
+  - AGP 8.12.3使用
+  - `useLegacyPackaging = false`
+  - `android.bundle.enableUncompressedNativeLibs=true`
+- [x] ARCore利用可能性チェック実装
+- [x] AR非対応端末へのフォールバック
+
 ## 技術スタック
 
 ### フロントエンド
@@ -42,10 +55,13 @@
 - FusedLocationProviderClient（現在地取得）
 - Google Play Services Location
 
-### 地図・検索・3D
+### 地図・検索・3D・AR
 - OSMDroid（OpenStreetMap）
 - Nominatim API（場所検索）
-- SceneView 2.2.1（3Dレンダリング）
+- SceneView 2.3.0（3Dレンダリング）
+- ARSceneView 2.3.0（ARレンダリング）
+- ARCore 1.45.0（拡張現実）
+- Google Filament（3Dレンダリングエンジン）
 
 ### アーキテクチャ
 - MVVM
@@ -59,10 +75,11 @@ app/src/main/java/jp/saitama/orange/mycompass/
 ├── MainActivity.kt              # メイン画面・ナビゲーション
 ├── CompassViewModel.kt          # コンパス・位置情報ロジック
 ├── CompassMeter.kt              # 2Dコンパス表示
-├── Compass3DView.kt             # 3Dコンパス表示
+├── Compass3DView.kt             # 3D/ARコンパス表示
 ├── MapScreen.kt                 # 地図画面
 ├── DestinationViewModel.kt     # 目的地管理
 ├── Destination.kt               # 目的地データクラス
+├── SettingsViewModel.kt         # 設定管理（AR等）
 ├── AboutScreen.kt               # Aboutページ
 ├── SettingsScreen.kt            # 設定ページ
 └── ui/theme/                    # テーマ設定
@@ -73,6 +90,11 @@ app/src/main/res/
 ```
 
 ## 今後の実装予定
+
+### 優先度：最高（AR機能改善）
+- [ ] ARモードでのカメラ追従実装
+- [ ] ARモードでの3Dオブジェクト配置最適化（カメラの周囲に配置）
+- [ ] ARモードでのノード位置動的更新
 
 ### 優先度：高
 - [ ] 設定の永続化（DataStore）
@@ -184,13 +206,31 @@ compassRing?.rotation = Rotation(0f, currentRotation, 0f)
 これらは`AndroidView`で埋め込んで使用する。
 
 ## 既知の問題
+
+### 一般
 - [ ] 地図検索時のエラーハンドリング改善
 - [ ] 位置情報取得失敗時のフォールバック
 - [ ] センサー精度低下時の通知
+
+### AR機能（v1.3）
+- [ ] ARモードで3Dオブジェクトがカメラに追従しない
+- [ ] ARモードで方角マーカーが正しい位置に配置されない（カメラの周囲に表示されない）
+- [ ] ARモードと通常モードの切り替え時にノード再生成が必要
 
 ## ビルド情報
 - compileSdk: 36
 - minSdk: 24
 - targetSdk: 36
-- Kotlin: 最新
-- Compose BOM: androidx.compose.bom
+- AGP: 8.12.3
+- Kotlin: 2.0.21
+- Compose BOM: 2024.09.00
+- SceneView: 2.3.0
+- ARSceneView: 2.3.0
+
+## Android 15+ 対応
+### 16KBページサイズアライメント
+- 要件: 2025年11月1日以降必須
+- 対応状況: ✅ 完了
+- AGP 8.12.3（8.5.1以上）で自動対応
+- gradle.properties: `android.bundle.enableUncompressedNativeLibs=true`
+- build.gradle.kts: `useLegacyPackaging = false`
