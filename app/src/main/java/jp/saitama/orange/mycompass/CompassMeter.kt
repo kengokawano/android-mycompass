@@ -95,14 +95,10 @@ fun CompassMeter(
                     val angleRad = Math.toRadians(destInfo.bearing.toDouble() - 90)
                     val centerX = boxSizePx / 2f
                     val centerY = boxSizePx / 2f
-                    val lineLength = boxSizePx * 0.15f
-                    val margin = 8 * density // 8.dp margin
+                    val radius = boxSizePx / 2f
 
-                    // Position the flag just inside the blue line, with a margin
-                    val flagRadius = (boxSizePx / 2f) - lineLength - margin
-                    val flagXPx = centerX + flagRadius * cos(angleRad).toFloat()
-                    val flagYPx = centerY + flagRadius * sin(angleRad).toFloat()
-
+                    val flagXPx = centerX + radius * cos(angleRad).toFloat()
+                    val flagYPx = centerY + radius * sin(angleRad).toFloat()
 
                     Column(
                         modifier = Modifier.offset {
