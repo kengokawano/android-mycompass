@@ -5,7 +5,8 @@
       "Bash(echo $USERPROFILE)",
       "WebSearch",
       "WebFetch(domain:engineers.safie.link)",
-      "WebFetch(domain:stackoverflow.com)"
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:poly.pizza)"
     ],
     "deny": [],
     "ask": []
