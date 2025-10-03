@@ -97,7 +97,7 @@ fun CompassMeter(
                     val centerY = boxSizePx / 2f
 
                     // Margin to place the flag's center outside the compass edge
-                    val margin = 12 * density // 12.dp margin
+                    val margin = 16 * density // 16.dp margin
                     val flagRadius = (boxSizePx / 2f) + margin
 
                     val flagXPx = centerX + flagRadius * cos(angleRad).toFloat()

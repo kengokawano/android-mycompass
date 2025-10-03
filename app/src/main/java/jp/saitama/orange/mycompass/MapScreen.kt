@@ -286,17 +286,6 @@ fun MapScreen(
                                 .weight(1f)
                                 .padding(end = 8.dp)
                         ) {
-                            // Name input
-                            OutlinedTextField(
-                                value = destinationName,
-                                onValueChange = { destinationName = it },
-                                label = { Text("Name") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
                             // Register button
                             Button(
                                 onClick = {
@@ -323,6 +312,17 @@ fun MapScreen(
                             ) {
                                 Text("Register (${destinations.size}/3)")
                             }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Name input
+                            OutlinedTextField(
+                                value = destinationName,
+                                onValueChange = { destinationName = it },
+                                label = { Text("Name") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
 
                             Spacer(modifier = Modifier.height(8.dp))
 

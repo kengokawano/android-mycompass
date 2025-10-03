@@ -1,5 +1,6 @@
 package jp.saitama.orange.mycompass
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,7 +14,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -32,13 +36,26 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// Factory for DestinationViewModel
+class DestinationViewModelFactory(private val application: Application) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(DestinationViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return DestinationViewModel(DestinationDataStore(application)) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val application = context.applicationContext as Application
 
     // Share ViewModels across navigation
     val compassViewModel: CompassViewModel = viewModel()
-    val destinationViewModel: DestinationViewModel = viewModel()
+    val destinationViewModel: DestinationViewModel = viewModel(factory = DestinationViewModelFactory(application))
     val settingsViewModel: SettingsViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "compass") {
