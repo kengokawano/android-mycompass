@@ -44,7 +44,7 @@ fun Compass3DView(
 ) {
     val context = LocalContext.current
     var currentRotation by remember { mutableStateOf(0f) }
-    var smoothedArAzimuth by remember { mutableStateOf(0f) } // AR用の平滑化された方位
+    var smoothedAzimuth by remember { mutableStateOf(0f) } // 平滑化された方位
     val isArAvailable = remember { checkArAvailability(context) }
 
     // Camera permission for AR
@@ -68,6 +68,7 @@ fun Compass3DView(
     val modelLoader = rememberModelLoader(engine)
     val compassRing = remember { mutableStateOf<Node?>(null) }
     val markerNodes = remember { mutableStateListOf<ModelNode>() }
+    val markerDirections = remember { mutableStateListOf<Triple<Int, String, Boolean>>() }
 
     // 方角の定義（絶対方位）
     val directions = listOf(
@@ -86,44 +87,51 @@ fun Compass3DView(
     // Load models asynchronously
     LaunchedEffect(Unit) {
         markerNodes.clear()
+        markerDirections.clear()
 
-        try {
-            val modelInstance = modelLoader.createModelInstance(
-                assetFileLocation = "models/alphabet_bold.glb"
-            )
-
-            // モデルの構造をログ出力
-            Log.d("CompassModel", "=== Model Loaded ===")
-            Log.d("CompassModel", "Model instance: $modelInstance")
-
-        } catch (e: Exception) {
-            Log.e("CompassModel", "Failed to load model", e)
-            e.printStackTrace()
-        }
-
-        directions.forEach { (degree, label, _) ->
+        directions.forEach { direction ->
+            val (degree, label, _) = direction
             val radian = Math.toRadians(degree.toDouble())
             val radius = 5f
             val x = (radius * sin(radian)).toFloat()
             val z = -(radius * cos(radian)).toFloat()
 
-            try {
-                val modelInstance = modelLoader.createModelInstance(
-                    assetFileLocation = "models/alphabet_bold.glb"
-                )
+            // 各方角に対応するファイル名
+            val fileName = when (label) {
+                "N" -> "letter_N.glb"
+                "E" -> "letter_E.glb"
+                "S" -> "letter_S.glb"
+                "W" -> "letter_E.glb" // Use E model for W as a substitute
+                else -> null // NE, SE, SW, NW は未対応
+            }
 
-                val modelNode = ModelNode(
-                    modelInstance = modelInstance,
-                    scaleToUnits = 0.5f
-                ).apply {
-                    position = Position(x, 0f, z)
-                    rotation = Rotation(0f, degree.toFloat(), 0f)
+            if (fileName != null) {
+                try {
+                    Log.d("CompassModel", "Loading $label at ${degree}° from $fileName, position=($x, $z)")
+                    val modelInstance = modelLoader.createModelInstance(
+                        assetFileLocation = "models/$fileName"
+                    )
+
+                    val modelNode = ModelNode(
+                        modelInstance = modelInstance,
+                        scaleToUnits = 0.5f
+                    ).apply {
+                        position = Position(x, 0f, z)
+                        rotation = if (label == "W") {
+                            Rotation(0f, degree.toFloat() + 180f, 0f)
+                        } else {
+                            Rotation(0f, degree.toFloat(), 0f)
+                        }
+                    }
+
+                    compassRing.value?.addChildNode(modelNode)
+                    markerNodes.add(modelNode)
+                    markerDirections.add(direction)
+                    Log.d("CompassModel", "Successfully loaded $label")
+                } catch (e: Exception) {
+                    Log.e("CompassModel", "Failed to load $fileName for $label", e)
+                    e.printStackTrace()
                 }
-
-                compassRing.value?.addChildNode(modelNode)
-                markerNodes.add(modelNode)
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
     }
@@ -133,50 +141,29 @@ fun Compass3DView(
     LaunchedEffect(shouldUseAr) {
         while (true) {
             compassRing.value?.let { ring ->
-                if (shouldUseAr) {
-                    // ARモード: 方位を平滑化
-                    smoothedArAzimuth += (latestAzimuth - smoothedArAzimuth) * arLerpFactor
-                    ring.rotation = Rotation(0f, 0f, 0f)
+                // ARモードか通常モードかで補間係数を変える
+                val currentLerpFactor = if (shouldUseAr) arLerpFactor else lerpFactor
+                smoothedAzimuth += (latestAzimuth - smoothedAzimuth) * currentLerpFactor
 
-                    markerNodes.forEachIndexed { index, marker ->
-                        val absoluteBearing = directions[index].first
-                        val relativeBearing = absoluteBearing - smoothedArAzimuth
-                        val radian = Math.toRadians(relativeBearing.toDouble())
-                        val radius = 4f
+                // リング自体の回転は常に0
+                ring.rotation = Rotation(0f, 0f, 0f)
 
-                        val x = (radius * sin(radian)).toFloat()
-                        val z = -(radius * cos(radian)).toFloat()
+                markerNodes.forEachIndexed { index, marker ->
+                    val absoluteBearing = markerDirections[index].first
+                    // 平滑化した方位角から相対的な方角を計算
+                    val relativeBearing = absoluteBearing - smoothedAzimuth
+                    val radian = Math.toRadians(relativeBearing.toDouble())
+                    
+                    // ARモードか通常モードかで半径を変える
+                    val radius = if (shouldUseAr) 4f else 5f
 
-                        marker.position = Position(x, 0f, z)
+                    // 新しい位置を計算
+                    val x = (radius * sin(radian)).toFloat()
+                    val z = -(radius * cos(radian)).toFloat()
 
-                        // ビルボード: カメラの方を向く
-                        val angleToCamera = Math.toDegrees(atan2(x.toDouble(), (-z).toDouble())).toFloat()
-                        marker.rotation = Rotation(0f, angleToCamera, 0f)
-                    }
-                } else {
-                    // 通常モード: リング全体を回転（補間あり）
-                    val targetRotation = -latestAzimuth
-                    currentRotation += (targetRotation - currentRotation) * lerpFactor
-                    ring.rotation = Rotation(0f, currentRotation, 0f)
+                    marker.position = Position(x, 0f, z)
 
-                    // ビルボード: 各マーカーがカメラを向く
-                    markerNodes.forEachIndexed { index, marker ->
-                        val degree = directions[index].first
-                        val radian = Math.toRadians(degree.toDouble())
-                        val radius = 5f
 
-                        val x = (radius * sin(radian)).toFloat()
-                        val z = -(radius * cos(radian)).toFloat()
-
-                        // 回転後の位置を計算
-                        val rotRad = Math.toRadians(currentRotation.toDouble())
-                        val rotX = x * cos(rotRad) - z * sin(rotRad)
-                        val rotZ = x * sin(rotRad) + z * cos(rotRad)
-
-                        // ビルボード回転
-                        val angleToCamera = Math.toDegrees(atan2(rotX, -rotZ)).toFloat()
-                        marker.rotation = Rotation(0f, angleToCamera, 0f)
-                    }
                 }
             }
             kotlinx.coroutines.delay(16) // ~60fps
