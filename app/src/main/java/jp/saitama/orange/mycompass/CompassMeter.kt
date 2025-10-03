@@ -18,6 +18,14 @@ import kotlin.math.abs
 import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material3.Icon
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.roundToInt
 
 @Composable
 fun CompassMeter(
@@ -38,20 +46,90 @@ fun CompassMeter(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f),
             contentAlignment = Alignment.Center
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.compass_photo),
-                contentDescription = "Compass Image",
+            val boxSizePx = constraints.maxWidth.toFloat()
+            val density = LocalDensity.current.density
+
+            // Container for all rotating elements
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .rotate(-azimuth)
-            )
-            // Draw a fixed marker that always points up
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.compass_photo),
+                    contentDescription = "Compass Image",
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val centerX = size.width / 2
+                    val centerY = size.height / 2
+                    val radius = size.width / 2
+
+                    // Draw destination lines (blue)
+                    destinationInfoList.forEach { destInfo ->
+                        val angleRad = Math.toRadians(destInfo.bearing.toDouble() - 90)
+
+                        val outerX = centerX + radius * cos(angleRad).toFloat()
+                        val outerY = centerY + radius * sin(angleRad).toFloat()
+                        val innerX = centerX + (radius - size.width * 0.15f) * cos(angleRad).toFloat()
+                        val innerY = centerY + (radius - size.height * 0.15f) * sin(angleRad).toFloat()
+
+                        drawLine(
+                            color = Color.Blue,
+                            start = Offset(x = outerX, y = outerY),
+                            end = Offset(x = innerX, y = innerY),
+                            strokeWidth = 8f
+                        )
+                    }
+                }
+
+                // Destination flags and labels
+                destinationInfoList.forEach { destInfo ->
+                    val angleRad = Math.toRadians(destInfo.bearing.toDouble() - 90)
+                    val centerX = boxSizePx / 2f
+                    val centerY = boxSizePx / 2f
+                    val lineLength = boxSizePx * 0.15f
+                    val margin = 8 * density // 8.dp margin
+
+                    // Position the flag just inside the blue line, with a margin
+                    val flagRadius = (boxSizePx / 2f) - lineLength - margin
+                    val flagXPx = centerX + flagRadius * cos(angleRad).toFloat()
+                    val flagYPx = centerY + flagRadius * sin(angleRad).toFloat()
+
+
+                    Column(
+                        modifier = Modifier.offset {
+                            IntOffset(
+                                x = (flagXPx - 12 * density).roundToInt(),
+                                y = (flagYPx - 12 * density).roundToInt()
+                            )
+                        },
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Flag,
+                            contentDescription = destInfo.destination.name,
+                            tint = Color.Blue,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = destInfo.destination.name,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Draw north marker (red line, fixed upward)
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val centerX = size.width / 2
                 drawLine(
