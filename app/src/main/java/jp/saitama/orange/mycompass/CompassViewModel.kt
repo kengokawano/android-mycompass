@@ -36,6 +36,11 @@ data class DestinationInfo(
 class CompassViewModel(application: Application) : AndroidViewModel(application), SensorEventListener {
 
     private val sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+
+    // Rotation Vector sensor (preferred - uses sensor fusion with automatic noise reduction)
+    private val rotationVectorSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+
+    // Fallback to old method if Rotation Vector not available
     private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     private val magnetometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
@@ -46,6 +51,8 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
     private val magnetometerReading = FloatArray(3)
     private val rotationMatrix = FloatArray(9)
     private val orientationAngles = FloatArray(3)
+
+    private val useRotationVector = rotationVectorSensor != null
 
     private val _azimuth = MutableStateFlow(0f)
     val azimuth: StateFlow<Float> = _azimuth.asStateFlow()
@@ -70,17 +77,32 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
     }
 
     init {
-        if (accelerometer == null || magnetometer == null) {
-            _sensorAvailable.value = false
+        // Check sensor availability
+        if (useRotationVector) {
+            if (rotationVectorSensor == null) {
+                _sensorAvailable.value = false
+            }
+        } else {
+            if (accelerometer == null || magnetometer == null) {
+                _sensorAvailable.value = false
+            }
         }
     }
 
     fun startListening() {
-        accelerometer?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
-        }
-        magnetometer?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+        if (useRotationVector) {
+            // Use Rotation Vector sensor (preferred)
+            rotationVectorSensor?.let {
+                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+            }
+        } else {
+            // Fallback to accelerometer + magnetometer
+            accelerometer?.let {
+                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+            }
+            magnetometer?.let {
+                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+            }
         }
         startLocationUpdates()
     }
@@ -166,15 +188,23 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
 
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
-            when (it.sensor.type) {
-                Sensor.TYPE_ACCELEROMETER -> {
-                    System.arraycopy(it.values, 0, accelerometerReading, 0, accelerometerReading.size)
+            if (useRotationVector) {
+                // Rotation Vector sensor (preferred method)
+                if (it.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+                    updateOrientationFromRotationVector(it.values)
                 }
-                Sensor.TYPE_MAGNETIC_FIELD -> {
-                    System.arraycopy(it.values, 0, magnetometerReading, 0, magnetometerReading.size)
+            } else {
+                // Fallback to accelerometer + magnetometer
+                when (it.sensor.type) {
+                    Sensor.TYPE_ACCELEROMETER -> {
+                        System.arraycopy(it.values, 0, accelerometerReading, 0, accelerometerReading.size)
+                    }
+                    Sensor.TYPE_MAGNETIC_FIELD -> {
+                        System.arraycopy(it.values, 0, magnetometerReading, 0, magnetometerReading.size)
+                    }
                 }
+                updateOrientationFromAccelMag()
             }
-            updateOrientation()
         }
     }
 
@@ -182,7 +212,31 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
         // Handle accuracy changes if needed
     }
 
-    private fun updateOrientation() {
+    private fun updateOrientationFromRotationVector(rotationVector: FloatArray) {
+        // Convert rotation vector to rotation matrix
+        SensorManager.getRotationMatrixFromVector(rotationMatrix, rotationVector)
+
+        // Remap coordinate system for portrait mode
+        val remappedRotationMatrix = FloatArray(9)
+        SensorManager.remapCoordinateSystem(
+            rotationMatrix,
+            SensorManager.AXIS_X,
+            SensorManager.AXIS_Z,
+            remappedRotationMatrix
+        )
+
+        SensorManager.getOrientation(remappedRotationMatrix, orientationAngles)
+
+        // Convert radians to degrees and normalize to 0-360
+        val azimuthInDegrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
+        val normalizedAzimuth = (azimuthInDegrees + 360) % 360
+
+        viewModelScope.launch {
+            _azimuth.value = normalizedAzimuth
+        }
+    }
+
+    private fun updateOrientationFromAccelMag() {
         val success = SensorManager.getRotationMatrix(
             rotationMatrix,
             null,
