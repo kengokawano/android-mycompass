@@ -35,6 +35,15 @@ fun checkArAvailability(context: Context): Boolean {
     }
 }
 
+private data class DirectionInfo(val degree: Int, val label: String, val isMajor: Boolean)
+
+private const val LERP_FACTOR_NORMAL = 0.2f
+private const val LERP_FACTOR_AR = 0.1f
+private const val RADIUS_NORMAL = 5f
+private const val RADIUS_AR = 4f
+private const val MODEL_SCALE = 0.5f
+private const val UPDATE_INTERVAL_MS = 16L
+
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun Compass3DView(
@@ -43,16 +52,15 @@ fun Compass3DView(
     arEnabled: Boolean = false
 ) {
     val context = LocalContext.current
-    var currentRotation by remember { mutableStateOf(0f) }
-    var smoothedAzimuth by remember { mutableStateOf(0f) } // 平滑化された方位
+    var smoothedAzimuth by remember { mutableStateOf(0f) }
     val isArAvailable = remember { checkArAvailability(context) }
 
     // Camera permission for AR
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
     // 補間係数
-    val lerpFactor = 0.2f // 通常モード用 (追従性UP)
-    val arLerpFactor = 0.1f // ARモード用 (プルプル抑制)
+    val lerpFactor = LERP_FACTOR_NORMAL // 通常モード用 (追従性UP)
+    val arLerpFactor = LERP_FACTOR_AR // ARモード用 (プルプル抑制)
 
     // Request camera permission when AR is enabled
     LaunchedEffect(arEnabled) {
@@ -68,14 +76,14 @@ fun Compass3DView(
     val modelLoader = rememberModelLoader(engine)
     val compassRing = remember { mutableStateOf<Node?>(null) }
     val markerNodes = remember { mutableStateListOf<ModelNode>() }
-    val markerDirections = remember { mutableStateListOf<Triple<Int, String, Boolean>>() }
+    val markerDirections = remember { mutableStateListOf<DirectionInfo>() }
 
     // 方角の定義（絶対方位）
     val directions = listOf(
-        Triple(0, "N", true), Triple(90, "E", true),
-        Triple(180, "S", true), Triple(270, "W", true),
-        Triple(45, "NE", false), Triple(135, "SE", false),
-        Triple(225, "SW", false), Triple(315, "NW", false)
+        DirectionInfo(0, "N", true), DirectionInfo(90, "E", true),
+        DirectionInfo(180, "S", true), DirectionInfo(270, "W", true),
+        DirectionInfo(45, "NE", false), DirectionInfo(135, "SE", false),
+        DirectionInfo(225, "SW", false), DirectionInfo(315, "NW", false)
     )
 
     val nodes = rememberNodes {
@@ -90,14 +98,13 @@ fun Compass3DView(
         markerDirections.clear()
 
         directions.forEach { direction ->
-            val (degree, label, _) = direction
-            val radian = Math.toRadians(degree.toDouble())
-            val radius = 5f
+            val radian = Math.toRadians(direction.degree.toDouble())
+            val radius = RADIUS_NORMAL
             val x = (radius * sin(radian)).toFloat()
             val z = -(radius * cos(radian)).toFloat()
 
             // 各方角に対応するファイル名
-            val fileName = when (label) {
+            val fileName = when (direction.label) {
                 "N" -> "letter_N.glb"
                 "E" -> "letter_E.glb"
                 "S" -> "letter_S.glb"
@@ -107,25 +114,25 @@ fun Compass3DView(
 
             if (fileName != null) {
                 try {
-                    Log.d("CompassModel", "Loading $label at ${degree}° from $fileName, position=($x, $z)")
+                    Log.d("CompassModel", "Loading ${direction.label} at ${direction.degree}° from $fileName, position=($x, $z)")
                     val modelInstance = modelLoader.createModelInstance(
                         assetFileLocation = "models/$fileName"
                     )
 
                     val modelNode = ModelNode(
                         modelInstance = modelInstance,
-                        scaleToUnits = 0.5f
+                        scaleToUnits = MODEL_SCALE
                     ).apply {
                         position = Position(x, 0f, z)
-                        rotation = Rotation(0f, degree.toFloat(), 0f)
+                        rotation = Rotation(0f, direction.degree.toFloat(), 0f)
                     }
 
                     compassRing.value?.addChildNode(modelNode)
                     markerNodes.add(modelNode)
                     markerDirections.add(direction)
-                    Log.d("CompassModel", "Successfully loaded $label")
+                    Log.d("CompassModel", "Successfully loaded ${direction.label}")
                 } catch (e: Exception) {
-                    Log.e("CompassModel", "Failed to load $fileName for $label", e)
+                    Log.e("CompassModel", "Failed to load $fileName for ${direction.label}", e)
                     e.printStackTrace()
                 }
             }
@@ -145,13 +152,13 @@ fun Compass3DView(
                 ring.rotation = Rotation(0f, 0f, 0f)
 
                 markerNodes.forEachIndexed { index, marker ->
-                    val absoluteBearing = markerDirections[index].first
+                    val absoluteBearing = markerDirections[index].degree
                     // 平滑化した方位角から相対的な方角を計算
                     val relativeBearing = absoluteBearing - smoothedAzimuth
                     val radian = Math.toRadians(relativeBearing.toDouble())
                     
                     // ARモードか通常モードかで半径を変える
-                    val radius = if (shouldUseAr) 4f else 5f
+                    val radius = if (shouldUseAr) RADIUS_AR else RADIUS_NORMAL
 
                     // 新しい位置を計算
                     val x = (radius * sin(radian)).toFloat()
@@ -162,11 +169,9 @@ fun Compass3DView(
                     // ビルボード: カメラの方を向く
                     val angleToCamera = Math.toDegrees(atan2(x.toDouble(), (-z).toDouble())).toFloat()
                     marker.rotation = Rotation(0f, angleToCamera, 0f)
-
-
                 }
             }
-            kotlinx.coroutines.delay(16) // ~60fps
+            kotlinx.coroutines.delay(UPDATE_INTERVAL_MS) // ~60fps
         }
     }
 
