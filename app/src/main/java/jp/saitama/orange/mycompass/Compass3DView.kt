@@ -101,7 +101,7 @@ fun Compass3DView(
                 "N" -> "letter_N.glb"
                 "E" -> "letter_E.glb"
                 "S" -> "letter_S.glb"
-                "W" -> "letter_E.glb" // Use E model for W as a substitute
+                "W" -> "letter_W.glb"
                 else -> null // NE, SE, SW, NW は未対応
             }
 
@@ -117,11 +117,7 @@ fun Compass3DView(
                         scaleToUnits = 0.5f
                     ).apply {
                         position = Position(x, 0f, z)
-                        rotation = if (label == "W") {
-                            Rotation(0f, degree.toFloat() + 180f, 0f)
-                        } else {
-                            Rotation(0f, degree.toFloat(), 0f)
-                        }
+                        rotation = Rotation(0f, degree.toFloat(), 0f)
                     }
 
                     compassRing.value?.addChildNode(modelNode)
@@ -162,6 +158,10 @@ fun Compass3DView(
                     val z = -(radius * cos(radian)).toFloat()
 
                     marker.position = Position(x, 0f, z)
+
+                    // ビルボード: カメラの方を向く
+                    val angleToCamera = Math.toDegrees(atan2(x.toDouble(), (-z).toDouble())).toFloat()
+                    marker.rotation = Rotation(0f, angleToCamera, 0f)
 
 
                 }
