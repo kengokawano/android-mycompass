@@ -3,6 +3,7 @@ package jp.saitama.orange.mycompass
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.style.TextAlign
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.roundToInt
@@ -327,7 +329,8 @@ fun DestinationInfoDisplay(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 200.dp)
+                .heightIn(max = 200.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(destinationInfoList) { destInfo ->
                 val bearingDisplay = if (useTrueNorth) {
@@ -344,12 +347,17 @@ fun DestinationInfoDisplay(
                         text = destInfo.destination.name,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        color = DestinationAccentColor
+                        color = DestinationAccentColor,
+                        modifier = Modifier.weight(1f)
                     )
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = "${bearingDisplay.toInt()}° / ${formatDistance(destInfo.distance, distanceUnit)}",
                         fontSize = 16.sp,
-                        color = DestinationAccentColor
+                        color = DestinationAccentColor,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier
+                            .widthIn(min = 120.dp)
                     )
                 }
             }

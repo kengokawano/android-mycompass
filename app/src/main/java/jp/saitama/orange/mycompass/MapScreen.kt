@@ -163,6 +163,7 @@ fun MapScreen(
     var selectedLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var currentLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var destinationName by remember { mutableStateOf(TextFieldValue("")) }
+    var shouldSelectAllOnFocus by remember { mutableStateOf(false) }
     var mapView by remember { mutableStateOf<MapView?>(null) }
     var currentMarker by remember { mutableStateOf<Marker?>(null) }
     var searchQuery by remember { mutableStateOf("") }
@@ -172,6 +173,13 @@ fun MapScreen(
 
     var searchError by remember { mutableStateOf<SearchLocationError?>(null) }
     var hasSearched by remember { mutableStateOf(false) }
+
+    LaunchedEffect(shouldSelectAllOnFocus) {
+        if (shouldSelectAllOnFocus) {
+            destinationName = destinationName.copy(selection = TextRange(0, destinationName.text.length))
+            shouldSelectAllOnFocus = false
+        }
+    }
 
     val performSearch: () -> Unit = {
         when {
@@ -309,10 +317,8 @@ fun MapScreen(
                                         selectedLocation = it
                                         // Set default name from coordinates
                                         val defaultName = "${String.format("%.4f", it.latitude)}, ${String.format("%.4f", it.longitude)}"
-                                        destinationName = TextFieldValue(
-                                            defaultName,
-                                            selection = TextRange(0, defaultName.length)
-                                        )
+                                        destinationName = TextFieldValue(defaultName)
+                                        focusManager.clearFocus(force = true)
 
                                         // Remove old marker
                                         currentMarker?.let { marker ->
@@ -408,10 +414,7 @@ fun MapScreen(
                                     .fillMaxWidth()
                                     .onFocusChanged { focusState ->
                                         if (focusState.isFocused) {
-                                            val selectionRange = TextRange(0, destinationName.text.length)
-                                            if (destinationName.selection != selectionRange) {
-                                                destinationName = destinationName.copy(selection = selectionRange)
-                                            }
+                                            shouldSelectAllOnFocus = true
                                         }
                                     },
                                 singleLine = true
@@ -447,7 +450,8 @@ fun MapScreen(
                             Spacer(modifier = Modifier.height(8.dp))
 
                             LazyColumn(
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 items(destinations) { destination ->
                                     Card(
@@ -588,10 +592,8 @@ fun MapScreen(
                                     modifier = Modifier.clickable {
                                         val geoPoint = GeoPoint(result.lat, result.lon)
                                         selectedLocation = geoPoint
-                                        destinationName = TextFieldValue(
-                                            result.displayName,
-                                            selection = TextRange(0, result.displayName.length)
-                                        )
+                                        destinationName = TextFieldValue(result.displayName)
+                                        focusManager.clearFocus(force = true)
                                         mapView?.controller?.animateTo(geoPoint)
                                         mapView?.controller?.setZoom(15.0)
 
