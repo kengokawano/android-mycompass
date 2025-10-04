@@ -213,23 +213,22 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun updateOrientationFromRotationVector(rotationVector: FloatArray) {
-        // Convert rotation vector to rotation matrix
+        // Get rotation matrix from rotation vector (already tilt-compensated)
         SensorManager.getRotationMatrixFromVector(rotationMatrix, rotationVector)
 
-        // Remap coordinate system for portrait mode
-        val remappedRotationMatrix = FloatArray(9)
-        SensorManager.remapCoordinateSystem(
-            rotationMatrix,
-            SensorManager.AXIS_X,
-            SensorManager.AXIS_Z,
-            remappedRotationMatrix
-        )
+        // Directly compute orientation from the raw rotation matrix to avoid
+        // incorrect remaps when device is held vertical/tilted.
+        SensorManager.getOrientation(rotationMatrix, orientationAngles)
 
-        SensorManager.getOrientation(remappedRotationMatrix, orientationAngles)
+        var azimuthInDegrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
 
-        // Convert radians to degrees and normalize to 0-360
-        val azimuthInDegrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
-        val normalizedAzimuth = (azimuthInDegrees + 360) % 360
+        // If the device is face-down (Z points away from user), compensate 180°
+        // so that on-screen north remains consistent.
+        if (rotationMatrix[8] < 0) {
+            azimuthInDegrees += 180f
+        }
+
+        val normalizedAzimuth = (azimuthInDegrees + 360f) % 360f
 
         viewModelScope.launch {
             _azimuth.value = normalizedAzimuth
@@ -245,20 +244,17 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
         )
 
         if (success) {
-            // Remap coordinate system for portrait mode
-            val remappedRotationMatrix = FloatArray(9)
-            SensorManager.remapCoordinateSystem(
-                rotationMatrix,
-                SensorManager.AXIS_X,
-                SensorManager.AXIS_Z,
-                remappedRotationMatrix
-            )
+            // Compute orientation directly from rotationMatrix for tilt independence
+            SensorManager.getOrientation(rotationMatrix, orientationAngles)
 
-            SensorManager.getOrientation(remappedRotationMatrix, orientationAngles)
+            var azimuthInDegrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
 
-            // Convert radians to degrees and normalize to 0-360
-            val azimuthInDegrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
-            val normalizedAzimuth = (azimuthInDegrees + 360) % 360
+            // Face-down compensation
+            if (rotationMatrix[8] < 0) {
+                azimuthInDegrees += 180f
+            }
+
+            val normalizedAzimuth = (azimuthInDegrees + 360f) % 360f
 
             viewModelScope.launch {
                 _azimuth.value = normalizedAzimuth
