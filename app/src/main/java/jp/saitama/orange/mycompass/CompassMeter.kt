@@ -31,7 +31,9 @@ import kotlin.math.roundToInt
 fun CompassMeter(
     azimuth: Float,
     destinationInfoList: List<DestinationInfo> = emptyList(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    pitch: Float = 0f,
+    roll: Float = 0f
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -127,6 +129,70 @@ fun CompassMeter(
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Subtle tilt indicator: small circle with a dot showing pitch/roll
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                val sizeDp = 72.dp
+                val strokeWidth = 2.dp
+                Box(
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .size(sizeDp)
+                ) {
+                    val tiltDotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val r = size.minDimension / 2f
+                        val center = Offset(size.width / 2f, size.height / 2f)
+
+                        // Outer circle (subtle)
+                        drawCircle(
+                            color = Color.Gray.copy(alpha = 0.25f),
+                            radius = r,
+                            center = center,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth.toPx())
+                        )
+
+                        // Crosshair
+                        drawLine(
+                            color = Color.Gray.copy(alpha = 0.2f),
+                            start = Offset(center.x - r, center.y),
+                            end = Offset(center.x + r, center.y),
+                            strokeWidth = 1f
+                        )
+                        drawLine(
+                            color = Color.Gray.copy(alpha = 0.2f),
+                            start = Offset(center.x, center.y - r),
+                            end = Offset(center.x, center.y + r),
+                            strokeWidth = 1f
+                        )
+
+                        // Map pitch/roll (deg) to dot position. Edge ≈ 45°
+                        val maxAngle = 45f
+                        val nx = (roll / maxAngle).coerceIn(-1f, 1f)
+                        val ny = (-pitch / maxAngle).coerceIn(-1f, 1f)
+                        var dx = nx * r
+                        var dy = ny * r
+                        // Clamp to circle boundary if outside
+                        val len = kotlin.math.sqrt(dx * dx + dy * dy)
+                        if (len > r) {
+                            val scale = r / len
+                            dx *= scale
+                            dy *= scale
+                        }
+
+                        // Dot
+                        drawCircle(
+                            color = tiltDotColor,
+                            radius = r * 0.08f,
+                            center = Offset(center.x + dx, center.y + dy)
                         )
                     }
                 }

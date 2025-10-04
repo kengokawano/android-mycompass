@@ -117,6 +117,8 @@ fun CompassApp(
     val destinationInfoList by compassViewModel.destinationInfoList.collectAsState()
     val destinations by destinationViewModel.destinations.collectAsState()
     val arEnabled by settingsViewModel.arEnabled.collectAsState()
+    val pitch by compassViewModel.pitch.collectAsState()
+    val roll by compassViewModel.roll.collectAsState()
 
     // Update destinations in compass viewmodel when location or destinations change
     LaunchedEffect(currentLocation, destinations) {
@@ -178,7 +180,9 @@ fun CompassApp(
                 // Compass Meter
                 CompassMeter(
                     azimuth = azimuth,
-                    destinationInfoList = destinationInfoList
+                    destinationInfoList = destinationInfoList,
+                    pitch = pitch,
+                    roll = roll
                 )
             }
         }

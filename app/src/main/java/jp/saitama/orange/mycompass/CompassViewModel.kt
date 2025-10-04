@@ -74,6 +74,12 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
     private val FACE_DOWN_OFF_THRESHOLD = 0.2f
     private val AZIMUTH_SMOOTH_ALPHA = 0.9f // higher = smoother, 0.85–0.95 recommended
 
+    // Expose tilt (pitch/roll) for UI visualization (degrees)
+    private val _pitch = MutableStateFlow(0f)
+    val pitch: StateFlow<Float> = _pitch.asStateFlow()
+    private val _roll = MutableStateFlow(0f)
+    val roll: StateFlow<Float> = _roll.asStateFlow()
+
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             locationResult.lastLocation?.let { location ->
@@ -251,6 +257,8 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
         }
 
         var azimuthInDegrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
+        val pitchDeg = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
+        val rollDeg = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
         if (isFaceDown) azimuthInDegrees += 180f
 
         val normalizedAzimuth = (azimuthInDegrees + 360f) % 360f
@@ -258,6 +266,8 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
 
         viewModelScope.launch {
             _azimuth.value = smoothed
+            _pitch.value = pitchDeg
+            _roll.value = rollDeg
         }
     }
 
@@ -282,6 +292,8 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
             }
 
             var azimuthInDegrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
+            val pitchDeg = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
+            val rollDeg = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
             if (isFaceDown) azimuthInDegrees += 180f
 
             val normalizedAzimuth = (azimuthInDegrees + 360f) % 360f
@@ -289,6 +301,8 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
 
             viewModelScope.launch {
                 _azimuth.value = smoothed
+                _pitch.value = pitchDeg
+                _roll.value = rollDeg
             }
         }
 
