@@ -92,6 +92,14 @@ fun CompassMeter(
                     val centerY = size.height / 2
                     val radius = size.width / 2
 
+                    // North marker (red), rotates with overlay to indicate north direction
+                    drawLine(
+                        color = Color.Red,
+                        start = Offset(x = centerX, y = 0f),
+                        end = Offset(x = centerX, y = size.height * 0.15f),
+                        strokeWidth = 8f
+                    )
+
                     destinationInfoList.forEach { destInfo ->
                         val bearingForDraw = if (useTrueNorth) {
                             ((destInfo.bearing + declinationDeg + 360f) % 360f)
@@ -215,16 +223,7 @@ fun CompassMeter(
                 }
             }
 
-            // Draw north marker (red line, fixed upward)
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val centerX = size.width / 2
-                drawLine(
-                    color = Color.Red,
-                    start = Offset(x = centerX, y = 0f),
-                    end = Offset(x = centerX, y = size.height * 0.15f),
-                    strokeWidth = 8f
-                )
-            }
+            // North marker now drawn in rotated overlay above
 
             // Small accuracy chip (bottom-start)
             Box(
