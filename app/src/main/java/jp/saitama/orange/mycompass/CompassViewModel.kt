@@ -57,6 +57,10 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
     private val orientationAngles = FloatArray(3)
 
     private val useRotationVector = rotationVectorSensor != null
+    private var isListening = false
+    private var isSensorRegistered = false
+    private var wantsLocationUpdates = false
+    private var isLocationUpdating = false
 
     private val _azimuth = MutableStateFlow(0f)
     val azimuth: StateFlow<Float> = _azimuth.asStateFlow()
@@ -118,49 +122,96 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun startListening() {
+        if (isListening) return
+        isListening = true
+        isSensorRegistered = false
+
         if (useRotationVector) {
-            // Use Rotation Vector sensor (preferred)
             rotationVectorSensor?.let {
                 sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+                isSensorRegistered = true
             }
         } else {
-            // Fallback to accelerometer + magnetometer
+            var registered = false
             accelerometer?.let {
                 sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+                registered = true
             }
             magnetometer?.let {
                 sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+                registered = true
             }
+            isSensorRegistered = registered
         }
-        startLocationUpdates()
+
+        if (wantsLocationUpdates) {
+            startLocationUpdates()
+        }
     }
 
     fun stopListening() {
-        sensorManager.unregisterListener(this)
+        if (!isListening && !isLocationUpdating) {
+            return
+        }
+
+        if (isSensorRegistered) {
+            sensorManager.unregisterListener(this)
+            isSensorRegistered = false
+        } else if (isListening) {
+            sensorManager.unregisterListener(this)
+        }
+
+        isListening = false
+        lastAzimuth = null
         stopLocationUpdates()
     }
 
+    fun setLocationTrackingEnabled(shouldTrack: Boolean) {
+        if (shouldTrack == wantsLocationUpdates) return
+        wantsLocationUpdates = shouldTrack
+        if (!isListening) {
+            return
+        }
+        if (shouldTrack) {
+            startLocationUpdates()
+        } else {
+            stopLocationUpdates()
+        }
+    }
+
     private fun startLocationUpdates() {
+        if (!wantsLocationUpdates || isLocationUpdating) return
         if (ContextCompat.checkSelfPermission(
                 getApplication(),
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             val locationRequest = LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                1000L
-            ).build()
-
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                null
+                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                3000L
             )
+                .setMinUpdateIntervalMillis(1500L)
+                .setMinUpdateDistanceMeters(5f)
+                .setWaitForAccurateLocation(false)
+                .build()
+
+            try {
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    locationCallback,
+                    null
+                )
+                isLocationUpdating = true
+            } catch (_: SecurityException) {
+                isLocationUpdating = false
+            }
         }
     }
 
     private fun stopLocationUpdates() {
+        if (!isLocationUpdating) return
         fusedLocationClient.removeLocationUpdates(locationCallback)
+        isLocationUpdating = false
     }
 
     fun updateDestinations(destinations: List<Destination>) {

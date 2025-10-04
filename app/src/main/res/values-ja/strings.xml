@@ -57,6 +57,12 @@
     <string name="map_destinations_title">登録地点一覧</string>
     <string name="map_search_placeholder">場所を検索...</string>
     <string name="map_search_button">検索</string>
+    <string name="map_search_error_network">通信に失敗しました。ネットワークを確認して再試行してください。</string>
+    <string name="map_search_error_client">検索リクエストが拒否されました。</string>
+    <string name="map_search_error_server">検索サービスが現在利用できません。</string>
+    <string name="map_search_error_rate_limited">リクエストが多すぎます。少し待ってから再検索してください。</string>
+    <string name="map_search_error_unknown">検索に失敗しました。再度お試しください。</string>
+    <string name="map_search_no_results">該当する場所が見つかりませんでした。キーワードを変えてお試しください。</string>
     <string name="map_rate_limit_message">あと%1$s秒</string>
 
     <!-- Accessibility -->

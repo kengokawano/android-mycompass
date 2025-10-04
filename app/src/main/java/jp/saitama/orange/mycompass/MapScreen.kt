@@ -39,11 +39,32 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import org.json.JSONArray
 import java.net.URL
 import java.net.URLEncoder
+import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 data class SearchResult(
     val displayName: String,
     val lat: Double,
     val lon: Double
+)
+
+enum class SearchErrorType {
+    NETWORK,
+    CLIENT,
+    SERVER,
+    RATE_LIMITED,
+    UNKNOWN
+}
+
+data class SearchLocationError(
+    val type: SearchErrorType,
+    val httpCode: Int? = null
+)
+
+data class SearchLocationResponse(
+    val results: List<SearchResult> = emptyList(),
+    val error: SearchLocationError? = null
 )
 
 object SearchRateLimiter {
@@ -70,43 +91,57 @@ object SearchRateLimiter {
     }
 }
 
-suspend fun searchLocation(query: String): List<SearchResult> {
+suspend fun searchLocation(query: String): SearchLocationResponse {
     return withContext(Dispatchers.IO) {
+        if (query.isBlank()) {
+            return@withContext SearchLocationResponse(emptyList())
+        }
         try {
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
             val urlString = "https://nominatim.openstreetmap.org/search?q=$encodedQuery&format=json&limit=5"
-            println("Search URL: $urlString")
 
             val url = URL(urlString)
-            val connection = url.openConnection() as java.net.HttpURLConnection
-            connection.setRequestProperty("User-Agent", "CompassApp/1.0 (Android)")
-            connection.setRequestProperty("Accept", "application/json")
-            connection.connectTimeout = 10000
-            connection.readTimeout = 10000
-
-            val response = connection.inputStream.bufferedReader().use { it.readText() }
-            println("Response: $response")
-
-            val jsonArray = JSONArray(response)
-            println("JSON Array length: ${jsonArray.length()}")
-
-            val results = mutableListOf<SearchResult>()
-            for (i in 0 until jsonArray.length()) {
-                val obj = jsonArray.getJSONObject(i)
-                results.add(
-                    SearchResult(
-                        displayName = obj.getString("display_name"),
-                        lat = obj.getDouble("lat"),
-                        lon = obj.getDouble("lon")
-                    )
-                )
+            val connection = (url.openConnection() as HttpURLConnection).apply {
+                setRequestProperty("User-Agent", "CompassApp/1.0 (Android)")
+                setRequestProperty("Accept", "application/json")
+                connectTimeout = 10000
+                readTimeout = 10000
+                requestMethod = "GET"
             }
-            println("Search results count: ${results.size}")
-            results
-        } catch (e: Exception) {
-            e.printStackTrace()
-            println("Search error: ${e.message}")
-            emptyList()
+
+            try {
+                when (val responseCode = connection.responseCode) {
+                    HttpURLConnection.HTTP_OK -> {
+                        val response = connection.inputStream.bufferedReader().use { it.readText() }
+                        val jsonArray = JSONArray(response)
+
+                        val results = mutableListOf<SearchResult>()
+                        for (i in 0 until jsonArray.length()) {
+                            val obj = jsonArray.getJSONObject(i)
+                            results.add(
+                                SearchResult(
+                                    displayName = obj.getString("display_name"),
+                                    lat = obj.getDouble("lat"),
+                                    lon = obj.getDouble("lon")
+                                )
+                            )
+                        }
+                        SearchLocationResponse(results = results)
+                    }
+                    429 -> SearchLocationResponse(error = SearchLocationError(SearchErrorType.RATE_LIMITED, responseCode))
+                    in 400..499 -> SearchLocationResponse(error = SearchLocationError(SearchErrorType.CLIENT, responseCode))
+                    in 500..599 -> SearchLocationResponse(error = SearchLocationError(SearchErrorType.SERVER, responseCode))
+                    else -> SearchLocationResponse(error = SearchLocationError(SearchErrorType.UNKNOWN, responseCode))
+                }
+            } finally {
+                connection.disconnect()
+            }
+        } catch (_: SocketTimeoutException) {
+            SearchLocationResponse(error = SearchLocationError(SearchErrorType.NETWORK))
+        } catch (_: UnknownHostException) {
+            SearchLocationResponse(error = SearchLocationError(SearchErrorType.NETWORK))
+        } catch (_: Exception) {
+            SearchLocationResponse(error = SearchLocationError(SearchErrorType.UNKNOWN))
         }
     }
 }
@@ -128,6 +163,41 @@ fun MapScreen(
     var searchResults by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var rateLimitMessage by remember { mutableStateOf("") }
+
+    var searchError by remember { mutableStateOf<SearchLocationError?>(null) }
+    var hasSearched by remember { mutableStateOf(false) }
+
+    val performSearch: () -> Unit = {
+        when {
+            searchQuery.isBlank() || isSearching -> Unit
+            SearchRateLimiter.canSearch() -> {
+                rateLimitMessage = ""
+                scope.launch {
+                    isSearching = true
+                    searchError = null
+                    hasSearched = false
+                    try {
+                        val response = searchLocation(searchQuery)
+                        hasSearched = true
+                        if (response.error != null) {
+                            searchResults = emptyList()
+                            searchError = response.error
+                        } else {
+                            searchResults = response.results
+                            searchError = null
+                        }
+                    } finally {
+                        isSearching = false
+                        SearchRateLimiter.recordSearch()
+                    }
+                }
+            }
+            else -> {
+                val remaining = SearchRateLimiter.getRemainingTime()
+                rateLimitMessage = context.getString(R.string.map_rate_limit_message, remaining.toString())
+            }
+        }
+    }
 
     val destinations by destinationViewModel.destinations.collectAsState()
 
@@ -405,33 +475,24 @@ fun MapScreen(
                 ) {
                     OutlinedTextField(
                         value = searchQuery,
-                        onValueChange = { searchQuery = it },
+                        onValueChange = {
+                            searchQuery = it
+                            if (it.isBlank()) {
+                                hasSearched = false
+                                searchError = null
+                                searchResults = emptyList()
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         placeholder = { Text(stringResource(R.string.map_search_placeholder)) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.cd_search)) },
                         trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
+                            if (searchQuery.isNotBlank()) {
                                 Button(
-                                    onClick = {
-                                        if (SearchRateLimiter.canSearch()) {
-                                            println("Search button clicked with query: $searchQuery")
-                                            rateLimitMessage = ""
-                                            scope.launch {
-                                                isSearching = true
-                                                println("Starting search...")
-                                                val results = searchLocation(searchQuery)
-                                                searchResults = results
-                                                println("Search completed. Results: ${results.size}")
-                                                isSearching = false
-                                                SearchRateLimiter.recordSearch()
-                                            }
-                                        } else {
-                                            val remaining = SearchRateLimiter.getRemainingTime()
-                                            rateLimitMessage = context.getString(R.string.map_rate_limit_message, remaining.toString())
-                                        }
-                                    }
+                                    onClick = { performSearch() },
+                                    enabled = !isSearching
                                 ) {
                                     Text(stringResource(R.string.map_search_button))
                                 }
@@ -442,22 +503,7 @@ fun MapScreen(
                             imeAction = androidx.compose.ui.text.input.ImeAction.Search
                         ),
                         keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                            onSearch = {
-                                if (searchQuery.isNotEmpty()) {
-                                    if (SearchRateLimiter.canSearch()) {
-                                        rateLimitMessage = ""
-                                        scope.launch {
-                                            isSearching = true
-                                            searchResults = searchLocation(searchQuery)
-                                            isSearching = false
-                                            SearchRateLimiter.recordSearch()
-                                        }
-                                    } else {
-                                        val remaining = SearchRateLimiter.getRemainingTime()
-                                        rateLimitMessage = context.getString(R.string.map_rate_limit_message, remaining.toString())
-                                    }
-                                }
-                            }
+                            onSearch = { performSearch() }
                         )
                     )
                 }
@@ -472,9 +518,34 @@ fun MapScreen(
                     )
                 }
 
+                val errorMessage = searchError?.let { error ->
+                    when (error.type) {
+                        SearchErrorType.NETWORK -> stringResource(R.string.map_search_error_network)
+                        SearchErrorType.CLIENT -> stringResource(R.string.map_search_error_client)
+                        SearchErrorType.SERVER -> stringResource(R.string.map_search_error_server)
+                        SearchErrorType.RATE_LIMITED -> stringResource(R.string.map_search_error_rate_limited)
+                        SearchErrorType.UNKNOWN -> stringResource(R.string.map_search_error_unknown)
+                    }
+                }
+
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                } else if (!isSearching && hasSearched && searchResults.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.map_search_no_results),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                }
+
                 // Search results
                 if (searchResults.isNotEmpty()) {
-                    println("Displaying ${searchResults.size} search results")
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

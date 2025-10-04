@@ -15,6 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -124,6 +127,7 @@ fun CompassApp(
     val sensorAccuracy by compassViewModel.sensorAccuracy.collectAsState()
     val declinationDeg by compassViewModel.declinationDeg.collectAsState()
     val useTrueNorth by settingsViewModel.useTrueNorth.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     // Update destinations in compass viewmodel when location or destinations change
     LaunchedEffect(currentLocation, destinations) {
@@ -132,9 +136,31 @@ fun CompassApp(
         }
     }
 
-    DisposableEffect(Unit) {
-        compassViewModel.startListening()
+    val shouldTrackLocation = remember(useTrueNorth, destinations) {
+        useTrueNorth || destinations.isNotEmpty()
+    }
+
+    LaunchedEffect(shouldTrackLocation) {
+        compassViewModel.setLocationTrackingEnabled(shouldTrackLocation)
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME, Lifecycle.Event.ON_START -> compassViewModel.startListening()
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> compassViewModel.stopListening()
+                else -> Unit
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            compassViewModel.startListening()
+        }
+
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
             compassViewModel.stopListening()
         }
     }
