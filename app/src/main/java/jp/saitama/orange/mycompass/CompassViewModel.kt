@@ -9,6 +9,9 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.hardware.GeomagneticField
+import android.hardware.display.DisplayManager
+import android.view.Display
+import android.view.Surface
 import android.location.Location
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
@@ -66,6 +69,10 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
 
     private val _destinationInfoList = MutableStateFlow<List<DestinationInfo>>(emptyList())
     val destinationInfoList: StateFlow<List<DestinationInfo>> = _destinationInfoList.asStateFlow()
+
+    // Current geomagnetic declination in degrees (east-positive)
+    private val _declinationDeg = MutableStateFlow(0f)
+    val declinationDeg: StateFlow<Float> = _declinationDeg.asStateFlow()
 
     // Smoothing and face-down hysteresis
     private var lastAzimuth: Float? = null
@@ -172,6 +179,7 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                 } catch (e: Exception) {
                     0f
                 }
+                _declinationDeg.value = declinationDeg
                 val infoList = destinations.map { dest ->
                     val trueBearing = calculateBearing(
                         currentLoc.latitude,
@@ -259,11 +267,7 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
         // Get rotation matrix from rotation vector (already tilt-compensated)
         SensorManager.getRotationMatrixFromVector(rotationMatrix, rotationVector)
 
-        // Directly compute orientation from the raw rotation matrix to avoid
-        // incorrect remaps when device is held vertical/tilted.
-        SensorManager.getOrientation(rotationMatrix, orientationAngles)
-
-        // Face-down hysteresis based on Z axis (R[8])
+        // Face-down hysteresis based on Z axis (device coords)
         val z = rotationMatrix[8]
         isFaceDown = if (isFaceDown) {
             if (z > FACE_DOWN_OFF_THRESHOLD) false else true
@@ -271,10 +275,21 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
             if (z < FACE_DOWN_ON_THRESHOLD) true else false
         }
 
+        // Remap to screen coordinates based on current display rotation
+        val outR = FloatArray(9)
+        val (axisX, axisZ) = remapAxesForDisplay()
+        SensorManager.remapCoordinateSystem(
+            rotationMatrix,
+            axisX,
+            if (isFaceDown) SensorManager.AXIS_MINUS_Z else axisZ,
+            outR
+        )
+
+        SensorManager.getOrientation(outR, orientationAngles)
+
         var azimuthInDegrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
         val pitchDeg = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
         val rollDeg = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
-        if (isFaceDown) azimuthInDegrees += 180f
 
         val normalizedAzimuth = (azimuthInDegrees + 360f) % 360f
         val smoothed = smoothAzimuth(normalizedAzimuth)
@@ -295,10 +310,7 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
         )
 
         if (success) {
-            // Compute orientation directly from rotationMatrix for tilt independence
-            SensorManager.getOrientation(rotationMatrix, orientationAngles)
-
-            // Face-down hysteresis based on Z axis (R[8])
+            // Face-down hysteresis based on Z axis (device coords)
             val z = rotationMatrix[8]
             isFaceDown = if (isFaceDown) {
                 if (z > FACE_DOWN_OFF_THRESHOLD) false else true
@@ -306,10 +318,21 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                 if (z < FACE_DOWN_ON_THRESHOLD) true else false
             }
 
+            // Remap to screen coordinates
+            val outR = FloatArray(9)
+            val (axisX, axisZ) = remapAxesForDisplay()
+            SensorManager.remapCoordinateSystem(
+                rotationMatrix,
+                axisX,
+                if (isFaceDown) SensorManager.AXIS_MINUS_Z else axisZ,
+                outR
+            )
+
+            SensorManager.getOrientation(outR, orientationAngles)
+
             var azimuthInDegrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
             val pitchDeg = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
             val rollDeg = Math.toDegrees(orientationAngles[2].toDouble()).toFloat()
-            if (isFaceDown) azimuthInDegrees += 180f
 
             val normalizedAzimuth = (azimuthInDegrees + 360f) % 360f
             val smoothed = smoothAzimuth(normalizedAzimuth)
@@ -321,6 +344,18 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
             }
         }
 
+    }
+
+    private fun remapAxesForDisplay(): Pair<Int, Int> {
+        val dm = getApplication<Application>().getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        val display = dm.getDisplay(Display.DEFAULT_DISPLAY)
+        return when (display?.rotation) {
+            Surface.ROTATION_0 -> Pair(SensorManager.AXIS_X, SensorManager.AXIS_Z)
+            Surface.ROTATION_90 -> Pair(SensorManager.AXIS_Y, SensorManager.AXIS_Z)
+            Surface.ROTATION_180 -> Pair(SensorManager.AXIS_MINUS_X, SensorManager.AXIS_Z)
+            Surface.ROTATION_270 -> Pair(SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_Z)
+            else -> Pair(SensorManager.AXIS_X, SensorManager.AXIS_Z)
+        }
     }
 
     private fun smoothAzimuth(newAngle: Float): Float {

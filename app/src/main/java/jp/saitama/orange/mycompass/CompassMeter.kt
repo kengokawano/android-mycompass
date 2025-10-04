@@ -36,7 +36,10 @@ fun CompassMeter(
     pitch: Float = 0f,
     roll: Float = 0f,
     headingAccuracyDeg: Float? = null,
-    sensorAccuracy: Int? = null
+    sensorAccuracy: Int? = null,
+    useTrueNorth: Boolean = false,
+    declinationDeg: Float = 0f,
+    distanceUnit: String = "meter"
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -60,11 +63,16 @@ fun CompassMeter(
             val boxSizePx = constraints.maxWidth.toFloat()
             val density = LocalDensity.current.density
 
+            // Effective azimuth for chosen basis
+            val effectiveAzimuth = if (useTrueNorth) {
+                ((azimuth + declinationDeg + 360f) % 360f)
+            } else azimuth
+
             // Rotating container for the compass image only
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .rotate(-azimuth)
+                    .rotate(-effectiveAzimuth)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.compass_photo),
@@ -77,7 +85,7 @@ fun CompassMeter(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .rotate(-azimuth)
+                    .rotate(-effectiveAzimuth)
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val centerX = size.width / 2
@@ -85,7 +93,10 @@ fun CompassMeter(
                     val radius = size.width / 2
 
                     destinationInfoList.forEach { destInfo ->
-                        val angleRad = Math.toRadians(destInfo.bearing.toDouble() - 90)
+                        val bearingForDraw = if (useTrueNorth) {
+                            ((destInfo.bearing + declinationDeg + 360f) % 360f)
+                        } else destInfo.bearing
+                        val angleRad = Math.toRadians(bearingForDraw.toDouble() - 90)
 
                         val outerX = centerX + radius * cos(angleRad).toFloat()
                         val outerY = centerY + radius * sin(angleRad).toFloat()
@@ -102,7 +113,10 @@ fun CompassMeter(
                 }
 
                 destinationInfoList.forEach { destInfo ->
-                    val angleRad = Math.toRadians(destInfo.bearing.toDouble() - 90)
+                    val bearingForDraw = if (useTrueNorth) {
+                        ((destInfo.bearing + declinationDeg + 360f) % 360f)
+                    } else destInfo.bearing
+                    val angleRad = Math.toRadians(bearingForDraw.toDouble() - 90)
                     val centerX = boxSizePx / 2f
                     val centerY = boxSizePx / 2f
 
@@ -247,13 +261,23 @@ fun CompassMeter(
         // Display destination info
         if (destinationInfoList.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            DestinationInfoDisplay(destinationInfoList = destinationInfoList)
+            DestinationInfoDisplay(
+                destinationInfoList = destinationInfoList,
+                useTrueNorth = useTrueNorth,
+                declinationDeg = declinationDeg,
+                distanceUnit = distanceUnit
+            )
         }
     }
 }
 
 @Composable
-fun DestinationInfoDisplay(destinationInfoList: List<DestinationInfo>) {
+fun DestinationInfoDisplay(
+    destinationInfoList: List<DestinationInfo>,
+    useTrueNorth: Boolean = false,
+    declinationDeg: Float = 0f,
+    distanceUnit: String = "meter"
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -269,6 +293,9 @@ fun DestinationInfoDisplay(destinationInfoList: List<DestinationInfo>) {
         Spacer(modifier = Modifier.height(8.dp))
 
         destinationInfoList.forEach { destInfo ->
+            val bearingDisplay = if (useTrueNorth) {
+                ((destInfo.bearing + declinationDeg + 360f) % 360f)
+            } else destInfo.bearing
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -281,7 +308,7 @@ fun DestinationInfoDisplay(destinationInfoList: List<DestinationInfo>) {
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "${destInfo.bearing.toInt()}° / ${formatDistance(destInfo.distance)}",
+                    text = "${bearingDisplay.toInt()}° / ${formatDistance(destInfo.distance, distanceUnit)}",
                     fontSize = 16.sp,
                     color = Color.Blue
                 )
@@ -290,11 +317,20 @@ fun DestinationInfoDisplay(destinationInfoList: List<DestinationInfo>) {
     }
 }
 
-private fun formatDistance(distance: Float): String {
-    return when {
-        distance < 1000 -> "${distance.toInt()}m"
-        distance < 10000 -> "%.1fkm".format(distance / 1000)
-        else -> "${(distance / 1000).toInt()}km"
+private fun formatDistance(distanceMeters: Float, unit: String): String {
+    return if (unit == "mile") {
+        val miles = distanceMeters / 1609.344f
+        when {
+            miles < 0.1f -> "${(miles * 5280f).toInt()}ft"
+            miles < 10f -> "%.2fmi".format(miles)
+            else -> "${miles.toInt()}mi"
+        }
+    } else {
+        when {
+            distanceMeters < 1000 -> "${distanceMeters.toInt()}m"
+            distanceMeters < 10000 -> "%.1fkm".format(distanceMeters / 1000f)
+            else -> "${(distanceMeters / 1000f).toInt()}km"
+        }
     }
 }
 

@@ -116,11 +116,13 @@ fun CompassApp(
     val currentLocation by compassViewModel.currentLocation.collectAsState()
     val destinationInfoList by compassViewModel.destinationInfoList.collectAsState()
     val destinations by destinationViewModel.destinations.collectAsState()
-    val arEnabled by settingsViewModel.arEnabled.collectAsState()
+    // removed AR setting
     val pitch by compassViewModel.pitch.collectAsState()
     val roll by compassViewModel.roll.collectAsState()
     val headingAccuracyDeg by compassViewModel.headingAccuracyDeg.collectAsState()
     val sensorAccuracy by compassViewModel.sensorAccuracy.collectAsState()
+    val declinationDeg by compassViewModel.declinationDeg.collectAsState()
+    val useTrueNorth by settingsViewModel.useTrueNorth.collectAsState()
 
     // Update destinations in compass viewmodel when location or destinations change
     LaunchedEffect(currentLocation, destinations) {
@@ -186,7 +188,10 @@ fun CompassApp(
                     pitch = pitch,
                     roll = roll,
                     headingAccuracyDeg = headingAccuracyDeg,
-                    sensorAccuracy = sensorAccuracy
+                    sensorAccuracy = sensorAccuracy,
+                    useTrueNorth = useTrueNorth,
+                    declinationDeg = declinationDeg,
+                    distanceUnit = settingsViewModel.distanceUnit.collectAsState().value
                 )
             }
         }

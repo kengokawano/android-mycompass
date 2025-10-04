@@ -18,11 +18,8 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     settingsViewModel: SettingsViewModel
 ) {
-    var enableNotifications by remember { mutableStateOf(true) }
-    var enableVibration by remember { mutableStateOf(true) }
-    var distanceUnit by remember { mutableStateOf("meter") }
-
-    val arEnabled by settingsViewModel.arEnabled.collectAsState()
+    val useTrueNorth by settingsViewModel.useTrueNorth.collectAsState()
+    val distanceUnit by settingsViewModel.distanceUnit.collectAsState()
 
     Scaffold(
         topBar = {
@@ -45,55 +42,6 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            // General Settings
-            Text(
-                text = stringResource(R.string.settings_general),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    // Notifications Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(text = stringResource(R.string.settings_notifications))
-                        Switch(
-                            checked = enableNotifications,
-                            onCheckedChange = { enableNotifications = it }
-                        )
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                    // Vibration Toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(text = stringResource(R.string.settings_vibration))
-                        Switch(
-                            checked = enableVibration,
-                            onCheckedChange = { enableVibration = it }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Display Settings
             Text(
                 text = stringResource(R.string.settings_display),
@@ -111,23 +59,23 @@ fun SettingsScreen(
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    // AR Mode Toggle
+                    // North basis toggle: True North vs Magnetic North
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = stringResource(R.string.settings_ar_mode))
+                            Text(text = "北の基準（真北で表示）")
                             Text(
-                                text = stringResource(R.string.settings_ar_description),
+                                text = "オン: 真北基準 / オフ: 磁北基準",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
-                            checked = arEnabled,
-                            onCheckedChange = { settingsViewModel.setArEnabled(it) }
+                            checked = useTrueNorth,
+                            onCheckedChange = { settingsViewModel.setUseTrueNorth(it) }
                         )
                     }
 
@@ -142,12 +90,12 @@ fun SettingsScreen(
                     ) {
                         FilterChip(
                             selected = distanceUnit == "meter",
-                            onClick = { distanceUnit = "meter" },
+                            onClick = { settingsViewModel.setDistanceUnit("meter") },
                             label = { Text(stringResource(R.string.settings_unit_meter)) }
                         )
                         FilterChip(
                             selected = distanceUnit == "mile",
-                            onClick = { distanceUnit = "mile" },
+                            onClick = { settingsViewModel.setDistanceUnit("mile") },
                             label = { Text(stringResource(R.string.settings_unit_mile)) }
                         )
                     }
@@ -156,34 +104,8 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Data Management
-            Text(
-                text = stringResource(R.string.settings_data),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Button(
-                        onClick = { /* TODO: Clear destinations */ },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text(stringResource(R.string.settings_clear_destinations))
-                    }
-                }
-            }
+            // Data Management (reserved for future)
         }
     }
 }
+
