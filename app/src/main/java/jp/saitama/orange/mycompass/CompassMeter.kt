@@ -20,6 +20,7 @@ import kotlin.math.abs
 import androidx.compose.foundation.Image
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.Icon
@@ -240,11 +241,18 @@ fun CompassMeter(
                 contentAlignment = Alignment.BottomStart
             ) {
                 val accText = when {
-                    headingAccuracyDeg != null -> "精度 ${qualityFromSigma(headingAccuracyDeg)}"
+                    headingAccuracyDeg != null -> {
+                        val qualityText = when {
+                            headingAccuracyDeg <= 7.5f -> stringResource(R.string.compass_accuracy_high)
+                            headingAccuracyDeg <= 20f -> stringResource(R.string.compass_accuracy_medium)
+                            else -> stringResource(R.string.compass_accuracy_low)
+                        }
+                        stringResource(R.string.compass_accuracy_label, qualityText)
+                    }
                     sensorAccuracy != null -> when (sensorAccuracy) {
-                        3 -> "精度 良"
-                        2 -> "精度 中"
-                        else -> "精度 低"
+                        3 -> stringResource(R.string.compass_accuracy_label, stringResource(R.string.compass_accuracy_high))
+                        2 -> stringResource(R.string.compass_accuracy_label, stringResource(R.string.compass_accuracy_medium))
+                        else -> stringResource(R.string.compass_accuracy_label, stringResource(R.string.compass_accuracy_low))
                     }
                     else -> null
                 }
@@ -292,7 +300,7 @@ fun DestinationInfoDisplay(
         horizontalAlignment = Alignment.Start
     ) {
         Text(
-            text = "登録地点",
+            text = stringResource(R.string.compass_registered_destinations),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -356,15 +364,5 @@ private fun formatDistance(distanceMeters: Float, unit: String): String {
             distanceMeters < 10000 -> "%.1fkm".format(distanceMeters / 1000f)
             else -> "${(distanceMeters / 1000f).toInt()}km"
         }
-    }
-}
-
-// Map 1σ heading accuracy (deg) to qualitative levels.
-// Thresholds can be tuned by UX feedback.
-private fun qualityFromSigma(sigmaDeg: Float): String {
-    return when {
-        sigmaDeg <= 7.5f -> "良"
-        sigmaDeg <= 20f -> "中"
-        else -> "低"
     }
 }

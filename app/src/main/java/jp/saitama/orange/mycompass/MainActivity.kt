@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -141,24 +142,24 @@ fun CompassApp(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Compass App") },
+                title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     IconButton(onClick = onNavigateToMap) {
                         Icon(
                             imageVector = Icons.Default.Map,
-                            contentDescription = "Open Map"
+                            contentDescription = stringResource(R.string.cd_open_map)
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings"
+                            contentDescription = stringResource(R.string.cd_open_settings)
                         )
                     }
                     IconButton(onClick = onNavigateToAbout) {
                         Icon(
                             imageVector = Icons.Default.Info,
-                            contentDescription = "About"
+                            contentDescription = stringResource(R.string.cd_open_about)
                         )
                     }
                 }
@@ -175,7 +176,7 @@ fun CompassApp(
         ) {
             if (!sensorAvailable) {
                 Text(
-                    text = "Sensor not available on this device",
+                    text = stringResource(R.string.error_sensor_unavailable),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(16.dp)

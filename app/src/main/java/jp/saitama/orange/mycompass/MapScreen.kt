@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -170,12 +171,12 @@ fun MapScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Select Location") },
+                title = { Text(stringResource(R.string.map_title_select_location)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 }
@@ -219,7 +220,7 @@ fun MapScreen(
                                 val marker = Marker(this).apply {
                                     position = loc
                                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                                    title = "Current Location"
+                                    title = ctx.getString(R.string.map_marker_current_location)
                                 }
                                 overlays.add(marker)
                                 currentMarker = marker
@@ -240,7 +241,7 @@ fun MapScreen(
                                         val marker = Marker(this@apply).apply {
                                             position = it
                                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                                            title = "Selected Location"
+                                            title = ctx.getString(R.string.map_marker_selected_location)
                                         }
                                         overlays.add(marker)
                                         currentMarker = marker
@@ -310,7 +311,7 @@ fun MapScreen(
                                          destinationName.isNotBlank() &&
                                          destinationViewModel.canAddMore()
                             ) {
-                                Text("Register (${destinations.size}/3)")
+                                Text(stringResource(R.string.map_register_button, destinations.size, 3))
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -319,7 +320,7 @@ fun MapScreen(
                             OutlinedTextField(
                                 value = destinationName,
                                 onValueChange = { destinationName = it },
-                                label = { Text("Name") },
+                                label = { Text(stringResource(R.string.map_input_name_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -329,11 +330,11 @@ fun MapScreen(
                             // Display coordinates
                             selectedLocation?.let { location ->
                                 Text(
-                                    text = "Lat: ${String.format("%.6f", location.latitude)}",
+                                    text = stringResource(R.string.map_selected_latitude, location.latitude),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 Text(
-                                    text = "Lon: ${String.format("%.6f", location.longitude)}",
+                                    text = stringResource(R.string.map_selected_longitude, location.longitude),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -346,7 +347,7 @@ fun MapScreen(
                                 .padding(start = 8.dp)
                         ) {
                             Text(
-                                text = "Destinations",
+                                text = stringResource(R.string.map_destinations_title),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                             )
@@ -379,7 +380,7 @@ fun MapScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Close,
-                                                contentDescription = "Delete",
+                                                contentDescription = stringResource(R.string.cd_delete),
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         }
@@ -408,8 +409,8 @@ fun MapScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
-                        placeholder = { Text("Search location...") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                        placeholder = { Text(stringResource(R.string.map_search_placeholder)) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.cd_search)) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
                                 Button(
@@ -428,11 +429,11 @@ fun MapScreen(
                                             }
                                         } else {
                                             val remaining = SearchRateLimiter.getRemainingTime()
-                                            rateLimitMessage = "Please wait ${remaining} seconds"
+                                            rateLimitMessage = context.getString(R.string.map_rate_limit_message, remaining.toString())
                                         }
                                     }
                                 ) {
-                                    Text("Search")
+                                    Text(stringResource(R.string.map_search_button))
                                 }
                             }
                         },
@@ -453,7 +454,7 @@ fun MapScreen(
                                         }
                                     } else {
                                         val remaining = SearchRateLimiter.getRemainingTime()
-                                        rateLimitMessage = "Please wait ${remaining} seconds"
+                                        rateLimitMessage = context.getString(R.string.map_rate_limit_message, remaining.toString())
                                     }
                                 }
                             }

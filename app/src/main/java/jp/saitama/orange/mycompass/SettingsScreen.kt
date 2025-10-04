@@ -66,9 +66,9 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "北の基準（真北で表示）")
+                            Text(text = stringResource(R.string.settings_true_north_label))
                             Text(
-                                text = "オン: 真北基準 / オフ: 磁北基準",
+                                text = stringResource(R.string.settings_true_north_description),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
