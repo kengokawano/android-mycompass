@@ -194,7 +194,7 @@ fun MapScreen(
             }
             else -> {
                 val remaining = SearchRateLimiter.getRemainingTime()
-                rateLimitMessage = context.getString(R.string.map_rate_limit_message, remaining.toString())
+                rateLimitMessage = context.getString(R.string.map_rate_limit_message, remaining)
             }
         }
     }

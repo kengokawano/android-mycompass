@@ -57,7 +57,7 @@
     <string name="map_destinations_title">Destinations</string>
     <string name="map_search_placeholder">Search location...</string>
     <string name="map_search_button">Search</string>
-    <string name="map_rate_limit_message">Please wait %1$s seconds</string>
+    <string name="map_rate_limit_message">Please wait %1$d seconds</string>
 
     <!-- Accessibility -->
     <string name="cd_open_map">Open map</string>

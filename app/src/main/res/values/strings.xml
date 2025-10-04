@@ -6,8 +6,8 @@
     <string name="about_version">バージョン 1.0</string>
     <string name="about_features">機能</string>
     <string name="about_feature1">リアルタイムのコンパス表示</string>
-    <string name="about_feature2">目的地を登録（最大3件）</string>
-    <string name="about_feature3">目的地までの方角と距離を表示</string>
+    <string name="about_feature2">目標地点を登録（最大3件）</string>
+    <string name="about_feature3">目標地点までの方角と距離を表示</string>
     <string name="about_feature4">地図で場所を検索・選択</string>
     <string name="about_feature_bullet">• %1$s</string>
     <string name="about_developer">開発者</string>
@@ -57,13 +57,13 @@
     <string name="map_destinations_title">登録地点一覧</string>
     <string name="map_search_placeholder">場所を検索...</string>
     <string name="map_search_button">検索</string>
-    <string name="map_search_error_network">Connection failed. Check your network and try again.</string>
-    <string name="map_search_error_client">Search request was rejected.</string>
-    <string name="map_search_error_server">Search service is unavailable right now.</string>
-    <string name="map_search_error_rate_limited">Too many requests. Please wait a moment and try again.</string>
-    <string name="map_search_error_unknown">Search failed. Please try again.</string>
-    <string name="map_search_no_results">No places found. Try a different keyword.</string>
-    <string name="map_rate_limit_message">あと%1$s秒</string>
+    <string name="map_search_error_network">通信に失敗しました。ネットワークを確認して再試行してください。</string>
+    <string name="map_search_error_client">検索リクエストが拒否されました。</string>
+    <string name="map_search_error_server">検索サービスが現在利用できません。</string>
+    <string name="map_search_error_rate_limited">リクエストが多すぎます。少し待ってから再検索してください。</string>
+    <string name="map_search_error_unknown">検索に失敗しました。再度お試しください。</string>
+    <string name="map_search_no_results">該当する場所が見つかりませんでした。キーワードを変えてお試しください。</string>
+    <string name="map_rate_limit_message">あと%1$d秒</string>
 
     <!-- Accessibility -->
     <string name="cd_open_map">地図を開く</string>

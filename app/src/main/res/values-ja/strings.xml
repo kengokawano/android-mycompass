@@ -63,7 +63,7 @@
     <string name="map_search_error_rate_limited">リクエストが多すぎます。少し待ってから再検索してください。</string>
     <string name="map_search_error_unknown">検索に失敗しました。再度お試しください。</string>
     <string name="map_search_no_results">該当する場所が見つかりませんでした。キーワードを変えてお試しください。</string>
-    <string name="map_rate_limit_message">あと%1$s秒</string>
+    <string name="map_rate_limit_message">あと%1$d秒</string>
 
     <!-- Accessibility -->
     <string name="cd_open_map">地図を開く</string>
