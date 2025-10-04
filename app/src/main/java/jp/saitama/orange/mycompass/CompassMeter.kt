@@ -28,7 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.Icon
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.layout.layout
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.roundToInt
@@ -150,13 +150,18 @@ fun CompassMeter(
                     val flagXPx = centerX + flagRadius * cos(angleRad).toFloat()
                     val flagYPx = centerY + flagRadius * sin(angleRad).toFloat()
 
+                    val iconHalfPx = (12 * density).roundToInt()
+
                     Column(
-                        modifier = Modifier.offset {
-                            IntOffset(
-                                x = (flagXPx - 12 * density).roundToInt(),
-                                y = (flagYPx - 12 * density).roundToInt()
-                            )
-                        },
+                        modifier = Modifier
+                            .layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                val x = (flagXPx - placeable.width / 2f).roundToInt()
+                                val y = (flagYPx - iconHalfPx).roundToInt()
+                                layout(constraints.maxWidth, constraints.maxHeight) {
+                                    placeable.placeRelative(x, y)
+                                }
+                            },
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
@@ -165,6 +170,7 @@ fun CompassMeter(
                             tint = DestinationFlagColor,
                             modifier = Modifier.size(24.dp)
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = destInfo.destination.name,
                             fontSize = 10.sp,
