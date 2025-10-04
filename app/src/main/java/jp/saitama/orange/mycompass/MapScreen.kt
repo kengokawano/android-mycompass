@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -154,6 +155,7 @@ fun MapScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     var selectedLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var currentLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var destinationName by remember { mutableStateOf("") }
@@ -301,6 +303,8 @@ fun MapScreen(
                                 override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
                                     p?.let {
                                         selectedLocation = it
+                                        // Set default name from coordinates
+                                        destinationName = "${String.format("%.4f", it.latitude)}, ${String.format("%.4f", it.longitude)}"
 
                                         // Remove old marker
                                         currentMarker?.let { marker ->
@@ -360,6 +364,7 @@ fun MapScreen(
                             // Register button
                             Button(
                                 onClick = {
+                                    focusManager.clearFocus()
                                     selectedLocation?.let { location ->
                                         if (destinationName.isNotBlank()) {
                                             val added = destinationViewModel.addDestination(
@@ -560,6 +565,7 @@ fun MapScreen(
                                     modifier = Modifier.clickable {
                                         val geoPoint = GeoPoint(result.lat, result.lon)
                                         selectedLocation = geoPoint
+                                        destinationName = result.displayName
                                         mapView?.controller?.animateTo(geoPoint)
                                         mapView?.controller?.setZoom(15.0)
 
