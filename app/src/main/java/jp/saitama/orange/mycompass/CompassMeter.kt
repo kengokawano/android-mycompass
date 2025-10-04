@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 
 import androidx.compose.ui.unit.dp
@@ -50,6 +51,13 @@ fun CompassMeter(
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
+        )
+
+        // Fixed upward triangle just below the angle text
+        Spacer(modifier = Modifier.height(6.dp))
+        FixedUpTriangle(
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -313,6 +321,24 @@ fun DestinationInfoDisplay(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun FixedUpTriangle(
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            moveTo(w / 2f, 0f)
+            lineTo(0f, h)
+            lineTo(w, h)
+            close()
+        }
+        drawPath(path = path, color = color)
     }
 }
 

@@ -1,63 +1,43 @@
-# Compass App TODOs (next improvements)
+# やることリスト（Compass App）
 
-## Settings & Persistence
-- [ ] Persist `useTrueNorth`, `arEnabled`, distance unit, and smoothing level via DataStore (Preferences).
-- [ ] Load persisted settings on startup and reflect in UI controls.
-- [ ] Remove hardcoded defaults once persistence is in place.
+## 完了済み
+- [x] 不要設定（通知・バイブ・AR）の削除
+- [x] 真北/磁北の基準トグル（設定）を追加
+- [x] 設定の永続化（useTrueNorth, distanceUnit）をDataStoreで実装
+- [x] コンパス画像・目的地描画・リスト表示の基準統一（真北/磁北に追従）
+- [x] ディスプレイ回転に応じた軸リマップ（remapCoordinateSystem + face-downヒステリシス）
+- [x] 傾きインジケータ（右下の薄い円＋ドット）
+- [x] 精度ラベル「精度 良/中/低」表示（Rotation Vectorのσまたはaccuracyに基づく）
+- [x] 北マーカーを北方向固定（回転レイヤー内で描画）
+- [x] 角度表示直下に固定上向き三角を追加（画面上向きの基準）
 
-## Orientation Robustness
-- [ ] Add display-rotation aware remap: use `Display.getRotation()` and `SensorManager.remapCoordinateSystem` with `AXIS_Z/AXIS_MINUS_Z` plus existing face-down hysteresis.
-- [ ] Verify behavior in portrait/landscape, face-up/face-down transitions.
+## 優先タスク（次にやる）
+- [ ] 文字列のstrings.xml移行（JA/EN）と用語統一（精度ラベル、北の基準、検索UI など）
+- [ ] 設定ヘルプの追記（真北/磁北の違いと使い分け）
+- [ ] 検索UXのエラーハンドリング（通信失敗/0件/レート制限のUI提示、ローカライズ）
+- [ ] 権限導線の整備（コンパス画面での位置許可リクエスト/ガイダンス）
+- [ ] 省電力対応（非表示時の位置/センサー更新の抑制、背景停止の徹底）
 
-## North Basis (True vs Magnetic)
-- [ ] Persist `useTrueNorth` and ensure consistent basis across: azimuth rotation, destination drawing, and list labels.
-- [ ] Add quick help text explaining the difference and when to use each.
+## 改善タスク
+- [ ] デバッグオーバーレイ（azimuth/declination/true vs magnetic bearing/スムージング係数）表示トグル
+- [ ] スムージング強度のプリセット（キビキビ/標準/滑らか）＋永続化
+- [ ] 距離単位（m/km・mi/ft）の文言/表記最適化（i18n含む）
+- [ ] 目的地表示のオプション（最寄りのみ表示・色分けなど）
+- [ ] アクセシビリティ（contentDescription、コントラスト、フォント拡大対応）
 
-## i18n/Strings
-- [ ] Move all hardcoded strings to `strings.xml` (Japanese/English at minimum).
-- [ ] Unify wording (e.g., 精度 良/中/低、北の基準など) and localize Search/Settings labels.
+## テスト
+- [ ] `calculateBearing`/`calculateDistance` のユニットテスト（既知座標ペア）
+- [ ] 角度→キャンバス変換の検証（0°=北, 90°=東 の描画位置確認）
 
-## Search UX (OSM/Nominatim)
-- [ ] Show user-facing errors for network failures, timeouts, and zero results.
-- [ ] Localize the rate-limit message; consider exponential backoff hints.
-- [ ] Consider lightweight response caching for repeated queries.
+## 運用/規約
+- [ ] Nominatimの利用規約順守（UA/レート制限の明文化、キャッシュ/代替も検討）
+- [ ] プライバシー記述（位置情報の用途/保存範囲）をREADME/DEVELOPMENT.mdに追記
+- [ ] ログ整理（本番は最小・開発は構造化、デバッグフラグの下に）
 
-## Permission & Onboarding
-- [ ] In compass screen, surface missing location permission with action to request.
-- [ ] Show brief guidance to calibrate (figure-eight) if 精度=低 が続く場合。
-
-## Debug/Diagnostics (dev-only toggle)
-- [ ] Optional overlay showing `azimuth`, `declination`, `bearing(true/mag)`, and smoothing level.
-- [ ] Gate via `BuildConfig.DEBUG` or hidden settings.
-
-## Performance & Power
-- [ ] Throttle location updates when app not visible; stop sensors in background.
-- [ ] Consider adaptive update rate based on motion (fused sensor).
-
-## Accuracy Label & Indicator
-- [ ] Tune thresholds for 精度 良/中/低; color-code chip (e.g., green/amber/red) with accessible contrast.
-- [ ] Optionally show numeric ±° in a tooltip or debug mode.
-
-## Units & Formatting
-- [ ] Wire distance unit setting (m/km vs mi) into `formatDistance()`; persist selection.
-
-## Testing
-- [ ] Unit tests for `calculateBearing` and `calculateDistance` (known coordinate pairs).
-- [ ] Integration sanity: verify bearing mapping to canvas angles (0=N, 90=E) with small rendering tests or math assertions.
-
-## Accessibility
-- [ ] Add content descriptions to key visuals; ensure labels readable with large fonts.
-
-## Cleanup & Compliance
-- [ ] Remove verbose logs; keep structured logs behind debug flag.
-- [ ] Revisit Nominatim usage policy; maintain UA, rate limits; consider alternative provider or server-side proxy for production.
-- [ ] Document privacy: location usage and storage in `DEVELOPMENT.md`/README.
-
-## Nice-to-haves
-- [ ] User-selectable smoothing presets (キビキビ/標準/滑らか)。
-- [ ] Option to pin/show only nearest destination (reduces clutter).
-- [ ] Simple calibration wizard entry point.
+## メモ/決定事項
+- 既定の基準は「磁北」。ユーザー設定で真北に切替可。
+- 精度表示は簡易ラベル（良/中/低）。詳細±度はデバッグ向けに保持。
 
 ---
-Owner: Mobile
-Priority: Settings persistence, rotation remap, i18n, permission UX (in this order)
+担当: Mobile
+優先度: i18n → 権限/エラーUX → 省電力 → デバッグ/テスト
