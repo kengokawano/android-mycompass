@@ -386,7 +386,7 @@ fun MapScreen(
                                          destinationName.isNotBlank() &&
                                          destinationViewModel.canAddMore()
                             ) {
-                                Text(stringResource(R.string.map_register_button, destinations.size, 3))
+                                Text(stringResource(R.string.map_register_button, destinations.size, Destination.MAX_DESTINATIONS))
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -428,36 +428,40 @@ fun MapScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            destinations.forEach { destination ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                    )
-                                ) {
-                                    Row(
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(destinations) { destination ->
+                                    Card(
                                         modifier = Modifier
-                                            .padding(8.dp)
-                                            .fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = destination.name,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            modifier = Modifier.weight(1f)
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.secondaryContainer
                                         )
-                                        IconButton(
-                                            onClick = { destinationViewModel.removeDestination(destination.id) },
-                                            modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                                .fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Close,
-                                                contentDescription = stringResource(R.string.cd_delete),
-                                                modifier = Modifier.size(16.dp)
+                                            Text(
+                                                text = destination.name,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                modifier = Modifier.weight(1f)
                                             )
+                                            IconButton(
+                                                onClick = { destinationViewModel.removeDestination(destination.id) },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = stringResource(R.string.cd_delete),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }

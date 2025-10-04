@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.abs
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -307,26 +309,32 @@ fun DestinationInfoDisplay(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        destinationInfoList.forEach { destInfo ->
-            val bearingDisplay = if (useTrueNorth) {
-                ((destInfo.bearing + declinationDeg + 360f) % 360f)
-            } else destInfo.bearing
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = destInfo.destination.name,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "${bearingDisplay.toInt()}° / ${formatDistance(destInfo.distance, distanceUnit)}",
-                    fontSize = 16.sp,
-                    color = Color.Blue
-                )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 200.dp)
+        ) {
+            items(destinationInfoList) { destInfo ->
+                val bearingDisplay = if (useTrueNorth) {
+                    ((destInfo.bearing + declinationDeg + 360f) % 360f)
+                } else destInfo.bearing
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = destInfo.destination.name,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "${bearingDisplay.toInt()}° / ${formatDistance(destInfo.distance, distanceUnit)}",
+                        fontSize = 16.sp,
+                        color = Color.Blue
+                    )
+                }
             }
         }
     }

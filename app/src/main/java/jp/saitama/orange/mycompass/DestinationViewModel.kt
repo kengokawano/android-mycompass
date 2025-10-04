@@ -23,7 +23,7 @@ class DestinationViewModel(private val dataStore: DestinationDataStore) : ViewMo
     }
 
     fun addDestination(name: String, latitude: Double, longitude: Double): Boolean {
-        if (_destinations.value.size >= 3) {
+        if (_destinations.value.size >= Destination.MAX_DESTINATIONS) {
             return false
         }
 
@@ -65,6 +65,6 @@ class DestinationViewModel(private val dataStore: DestinationDataStore) : ViewMo
     }
 
     fun canAddMore(): Boolean {
-        return _destinations.value.size < 3
+        return _destinations.value.size < Destination.MAX_DESTINATIONS
     }
 }
