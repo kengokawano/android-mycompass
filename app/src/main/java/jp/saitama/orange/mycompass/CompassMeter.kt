@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.Icon
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import kotlin.math.cos
 import kotlin.math.sin
@@ -161,6 +162,9 @@ fun CompassMeter(
                                 layout(constraints.maxWidth, constraints.maxHeight) {
                                     placeable.placeRelative(x, y)
                                 }
+                            }
+                            .graphicsLayer {
+                                rotationZ = effectiveAzimuth
                             },
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
