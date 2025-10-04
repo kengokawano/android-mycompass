@@ -55,7 +55,7 @@ fun CompassMeter(
             val boxSizePx = constraints.maxWidth.toFloat()
             val density = LocalDensity.current.density
 
-            // Container for all rotating elements
+            // Rotating container for the compass image only
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -66,13 +66,19 @@ fun CompassMeter(
                     contentDescription = "Compass Image",
                     modifier = Modifier.fillMaxSize()
                 )
+            }
 
+            // Overlay rotated with the compass: draw destinations by absolute magnetic bearing
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .rotate(-azimuth)
+            ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val centerX = size.width / 2
                     val centerY = size.height / 2
                     val radius = size.width / 2
 
-                    // Draw destination lines (blue)
                     destinationInfoList.forEach { destInfo ->
                         val angleRad = Math.toRadians(destInfo.bearing.toDouble() - 90)
 
@@ -90,14 +96,12 @@ fun CompassMeter(
                     }
                 }
 
-                // Destination flags and labels
                 destinationInfoList.forEach { destInfo ->
                     val angleRad = Math.toRadians(destInfo.bearing.toDouble() - 90)
                     val centerX = boxSizePx / 2f
                     val centerY = boxSizePx / 2f
 
-                    // Margin to place the flag's center outside the compass edge
-                    val margin = 16 * density // 16.dp margin
+                    val margin = 16 * density
                     val flagRadius = (boxSizePx / 2f) + margin
 
                     val flagXPx = centerX + flagRadius * cos(angleRad).toFloat()

@@ -8,6 +8,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.hardware.GeomagneticField
 import android.location.Location
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
@@ -146,13 +147,27 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             val currentLoc = _currentLocation.value
             if (currentLoc != null) {
+                // Compute geomagnetic declination (degrees) at current location/time
+                val declinationDeg = try {
+                    val field = GeomagneticField(
+                        currentLoc.latitude.toFloat(),
+                        currentLoc.longitude.toFloat(),
+                        (currentLoc.altitude ?: 0.0).toFloat(),
+                        System.currentTimeMillis()
+                    )
+                    field.declination
+                } catch (e: Exception) {
+                    0f
+                }
                 val infoList = destinations.map { dest ->
-                    val bearing = calculateBearing(
+                    val trueBearing = calculateBearing(
                         currentLoc.latitude,
                         currentLoc.longitude,
                         dest.latitude,
                         dest.longitude
                     )
+                    // Convert true-bearing to magnetic-bearing so it matches sensor azimuth
+                    val bearing = ((trueBearing - declinationDeg + 360f) % 360f)
                     val distance = calculateDistance(
                         currentLoc.latitude,
                         currentLoc.longitude,
