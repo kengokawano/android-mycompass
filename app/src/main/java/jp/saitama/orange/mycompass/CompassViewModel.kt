@@ -80,6 +80,13 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
     private val _roll = MutableStateFlow(0f)
     val roll: StateFlow<Float> = _roll.asStateFlow()
 
+    // Heading accuracy (±deg) when available from rotation-vector; otherwise null
+    private val _headingAccuracyDeg = MutableStateFlow<Float?>(null)
+    val headingAccuracyDeg: StateFlow<Float?> = _headingAccuracyDeg.asStateFlow()
+    // Last reported sensor accuracy status (UNRELIABLE=0..HIGH=3)
+    private val _sensorAccuracy = MutableStateFlow<Int?>(null)
+    val sensorAccuracy: StateFlow<Int?> = _sensorAccuracy.asStateFlow()
+
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             locationResult.lastLocation?.let { location ->
@@ -158,7 +165,7 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                     val field = GeomagneticField(
                         currentLoc.latitude.toFloat(),
                         currentLoc.longitude.toFloat(),
-                        (currentLoc.altitude ?: 0.0).toFloat(),
+                        currentLoc.altitude.toFloat(),
                         System.currentTimeMillis()
                     )
                     field.declination
@@ -219,6 +226,12 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
             if (useRotationVector) {
                 // Rotation Vector sensor (preferred method)
                 if (it.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+                    // Estimated heading accuracy (radians) may be provided in values[4]
+                    if (it.values.size >= 5) {
+                        val accRad = it.values[4]
+                        val accDeg = Math.toDegrees(accRad.toDouble()).toFloat().coerceAtLeast(0f)
+                        viewModelScope.launch { _headingAccuracyDeg.value = accDeg }
+                    }
                     updateOrientationFromRotationVector(it.values)
                 }
             } else {
@@ -237,7 +250,9 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Handle accuracy changes if needed
+        viewModelScope.launch {
+            _sensorAccuracy.value = accuracy
+        }
     }
 
     private fun updateOrientationFromRotationVector(rotationVector: FloatArray) {

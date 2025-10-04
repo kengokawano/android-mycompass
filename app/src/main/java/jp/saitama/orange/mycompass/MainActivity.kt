@@ -119,6 +119,8 @@ fun CompassApp(
     val arEnabled by settingsViewModel.arEnabled.collectAsState()
     val pitch by compassViewModel.pitch.collectAsState()
     val roll by compassViewModel.roll.collectAsState()
+    val headingAccuracyDeg by compassViewModel.headingAccuracyDeg.collectAsState()
+    val sensorAccuracy by compassViewModel.sensorAccuracy.collectAsState()
 
     // Update destinations in compass viewmodel when location or destinations change
     LaunchedEffect(currentLocation, destinations) {
@@ -182,7 +184,9 @@ fun CompassApp(
                     azimuth = azimuth,
                     destinationInfoList = destinationInfoList,
                     pitch = pitch,
-                    roll = roll
+                    roll = roll,
+                    headingAccuracyDeg = headingAccuracyDeg,
+                    sensorAccuracy = sensorAccuracy
                 )
             }
         }

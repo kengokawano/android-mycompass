@@ -3,6 +3,7 @@ package jp.saitama.orange.mycompass
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,7 +34,9 @@ fun CompassMeter(
     destinationInfoList: List<DestinationInfo> = emptyList(),
     modifier: Modifier = Modifier,
     pitch: Float = 0f,
-    roll: Float = 0f
+    roll: Float = 0f,
+    headingAccuracyDeg: Float? = null,
+    sensorAccuracy: Int? = null
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -208,6 +211,37 @@ fun CompassMeter(
                     strokeWidth = 8f
                 )
             }
+
+            // Small accuracy chip (bottom-start)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.BottomStart
+            ) {
+                val accText = when {
+                    headingAccuracyDeg != null -> "精度 ${qualityFromSigma(headingAccuracyDeg)}"
+                    sensorAccuracy != null -> when (sensorAccuracy) {
+                        3 -> "精度 良"
+                        2 -> "精度 中"
+                        else -> "精度 低"
+                    }
+                    else -> null
+                }
+                accText?.let { txt ->
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                        tonalElevation = 2.dp,
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            text = txt,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
         }
 
         // Display destination info
@@ -261,5 +295,15 @@ private fun formatDistance(distance: Float): String {
         distance < 1000 -> "${distance.toInt()}m"
         distance < 10000 -> "%.1fkm".format(distance / 1000)
         else -> "${(distance / 1000).toInt()}km"
+    }
+}
+
+// Map 1σ heading accuracy (deg) to qualitative levels.
+// Thresholds can be tuned by UX feedback.
+private fun qualityFromSigma(sigmaDeg: Float): String {
+    return when {
+        sigmaDeg <= 7.5f -> "良"
+        sigmaDeg <= 20f -> "中"
+        else -> "低"
     }
 }
