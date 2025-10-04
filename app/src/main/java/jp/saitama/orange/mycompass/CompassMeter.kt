@@ -1,6 +1,7 @@
 package jp.saitama.orange.mycompass
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -31,6 +32,10 @@ import androidx.compose.ui.unit.IntOffset
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.roundToInt
+
+private val DestinationFlagColor = Color(0xFFFF9800)
+private val DestinationHighlightColor = Color(0xFFFFF59D)
+private val DestinationAccentColor = Color(0xFFFF9800)
 
 @Composable
 fun CompassMeter(
@@ -123,7 +128,7 @@ fun CompassMeter(
                         val innerY = centerY + (radius - size.height * 0.15f) * sin(angleRad).toFloat()
 
                         drawLine(
-                            color = Color.Blue,
+                            color = DestinationAccentColor,
                             start = Offset(x = outerX, y = outerY),
                             end = Offset(x = innerX, y = innerY),
                             strokeWidth = 8f
@@ -157,13 +162,13 @@ fun CompassMeter(
                         Icon(
                             imageVector = Icons.Default.Flag,
                             contentDescription = destInfo.destination.name,
-                            tint = Color.Blue,
+                            tint = DestinationFlagColor,
                             modifier = Modifier.size(24.dp)
                         )
                         Text(
                             text = destInfo.destination.name,
                             fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = DestinationAccentColor,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -305,7 +310,7 @@ fun DestinationInfoDisplay(
             text = stringResource(R.string.compass_registered_destinations),
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = DestinationAccentColor
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -321,18 +326,20 @@ fun DestinationInfoDisplay(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp),
+                        .background(DestinationHighlightColor, MaterialTheme.shapes.small)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         text = destInfo.destination.name,
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        color = DestinationAccentColor
                     )
                     Text(
                         text = "${bearingDisplay.toInt()}° / ${formatDistance(destInfo.distance, distanceUnit)}",
                         fontSize = 16.sp,
-                        color = Color.Blue
+                        color = DestinationAccentColor
                     )
                 }
             }

@@ -288,8 +288,14 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                     // Estimated heading accuracy (radians) may be provided in values[4]
                     if (it.values.size >= 5) {
                         val accRad = it.values[4]
-                        val accDeg = Math.toDegrees(accRad.toDouble()).toFloat().coerceAtLeast(0f)
+                        val accDeg = if (accRad.isFinite() && accRad >= 0f) {
+                            Math.toDegrees(accRad.toDouble()).toFloat().coerceAtLeast(0f)
+                        } else {
+                            null
+                        }
                         viewModelScope.launch { _headingAccuracyDeg.value = accDeg }
+                    } else {
+                        viewModelScope.launch { _headingAccuracyDeg.value = null }
                     }
                     updateOrientationFromRotationVector(it.values)
                 }

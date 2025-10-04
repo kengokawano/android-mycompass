@@ -19,6 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -158,7 +162,7 @@ fun MapScreen(
     val focusManager = LocalFocusManager.current
     var selectedLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var currentLocation by remember { mutableStateOf<GeoPoint?>(null) }
-    var destinationName by remember { mutableStateOf("") }
+    var destinationName by remember { mutableStateOf(TextFieldValue("")) }
     var mapView by remember { mutableStateOf<MapView?>(null) }
     var currentMarker by remember { mutableStateOf<Marker?>(null) }
     var searchQuery by remember { mutableStateOf("") }
@@ -304,7 +308,11 @@ fun MapScreen(
                                     p?.let {
                                         selectedLocation = it
                                         // Set default name from coordinates
-                                        destinationName = "${String.format("%.4f", it.latitude)}, ${String.format("%.4f", it.longitude)}"
+                                        val defaultName = "${String.format("%.4f", it.latitude)}, ${String.format("%.4f", it.longitude)}"
+                                        destinationName = TextFieldValue(
+                                            defaultName,
+                                            selection = TextRange(0, defaultName.length)
+                                        )
 
                                         // Remove old marker
                                         currentMarker?.let { marker ->
@@ -366,14 +374,14 @@ fun MapScreen(
                                 onClick = {
                                     focusManager.clearFocus()
                                     selectedLocation?.let { location ->
-                                        if (destinationName.isNotBlank()) {
+                                        if (destinationName.text.isNotBlank()) {
                                             val added = destinationViewModel.addDestination(
-                                                destinationName,
+                                                destinationName.text,
                                                 location.latitude,
                                                 location.longitude
                                             )
                                             if (added) {
-                                                destinationName = ""
+                                                destinationName = TextFieldValue("")
                                                 selectedLocation = null
                                             }
                                         }
@@ -383,7 +391,7 @@ fun MapScreen(
                                     .fillMaxWidth()
                                     .height(48.dp),
                                 enabled = selectedLocation != null &&
-                                         destinationName.isNotBlank() &&
+                                         destinationName.text.isNotBlank() &&
                                          destinationViewModel.canAddMore()
                             ) {
                                 Text(stringResource(R.string.map_register_button, destinations.size, Destination.MAX_DESTINATIONS))
@@ -396,7 +404,16 @@ fun MapScreen(
                                 value = destinationName,
                                 onValueChange = { destinationName = it },
                                 label = { Text(stringResource(R.string.map_input_name_label)) },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .onFocusChanged { focusState ->
+                                        if (focusState.isFocused) {
+                                            val selectionRange = TextRange(0, destinationName.text.length)
+                                            if (destinationName.selection != selectionRange) {
+                                                destinationName = destinationName.copy(selection = selectionRange)
+                                            }
+                                        }
+                                    },
                                 singleLine = true
                             )
 
@@ -424,7 +441,8 @@ fun MapScreen(
                             Text(
                                 text = stringResource(R.string.map_destinations_title),
                                 style = MaterialTheme.typography.titleSmall,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                color = Color(0xFFFF9800)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
 
@@ -437,7 +455,7 @@ fun MapScreen(
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp),
                                         colors = CardDefaults.cardColors(
-                                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                            containerColor = Color(0xFFFFF59D)
                                         )
                                     ) {
                                         Row(
@@ -450,6 +468,7 @@ fun MapScreen(
                                             Text(
                                                 text = destination.name,
                                                 style = MaterialTheme.typography.bodySmall,
+                                                color = Color(0xFFFF9800),
                                                 modifier = Modifier.weight(1f)
                                             )
                                             IconButton(
@@ -569,7 +588,10 @@ fun MapScreen(
                                     modifier = Modifier.clickable {
                                         val geoPoint = GeoPoint(result.lat, result.lon)
                                         selectedLocation = geoPoint
-                                        destinationName = result.displayName
+                                        destinationName = TextFieldValue(
+                                            result.displayName,
+                                            selection = TextRange(0, result.displayName.length)
+                                        )
                                         mapView?.controller?.animateTo(geoPoint)
                                         mapView?.controller?.setZoom(15.0)
 
