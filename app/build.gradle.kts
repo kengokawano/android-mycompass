@@ -61,29 +61,20 @@ dependencies {
     // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
-    // Lifecycle-aware Compose utils
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-
     // Material Icons Extended
     implementation("androidx.compose.material:material-icons-extended:1.7.6")
 
     // OSMDroid for OpenStreetMap
-    implementation("org.osmdroid:osmdroid-android:6.1.18")
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
     // Accompanist Permissions
-    implementation("com.google.accompanist:accompanist-permissions:0.36.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.37.0")
 
     // Google Play Services Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
-
-    // SceneView for 3D rendering (latest version with 16KB alignment support)
-    implementation("io.github.sceneview:sceneview:2.3.0")
-
-    // ARSceneView for AR rendering (latest version with 16KB alignment support)
-    implementation("io.github.sceneview:arsceneview:2.3.0")
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")

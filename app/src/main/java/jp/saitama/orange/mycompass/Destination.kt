@@ -10,6 +10,6 @@ data class Destination(
     val longitude: Double
 ) {
     companion object {
-        const val MAX_DESTINATIONS = 5
+        const val MAX_DESTINATIONS = 8
     }
 }

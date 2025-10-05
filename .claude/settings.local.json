@@ -6,7 +6,8 @@
       "WebSearch",
       "WebFetch(domain:engineers.safie.link)",
       "WebFetch(domain:stackoverflow.com)",
-      "WebFetch(domain:poly.pizza)"
+      "WebFetch(domain:poly.pizza)",
+      "Read(//d/**)"
     ],
     "deny": [],
     "ask": []
