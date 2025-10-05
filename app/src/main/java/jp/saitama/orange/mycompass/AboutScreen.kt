@@ -5,6 +5,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -17,6 +19,13 @@ import androidx.compose.ui.unit.sp
 fun AboutScreen(
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val appVersion = remember {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
+        }.getOrDefault("1.0")
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -52,9 +61,14 @@ fun AboutScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = stringResource(R.string.about_version),
-                fontSize = 16.sp,
+                text = stringResource(R.string.about_version_label),
+                fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = appVersion,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -98,8 +112,12 @@ fun AboutScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = stringResource(R.string.about_developer_location))
+                    Text(
+                        text = stringResource(R.string.about_developer_label),
+                        fontWeight = FontWeight.Medium
+                    )
                     Text(text = stringResource(R.string.about_developer_name))
+                    Text(text = stringResource(R.string.about_developer_location))
                 }
             }
         }

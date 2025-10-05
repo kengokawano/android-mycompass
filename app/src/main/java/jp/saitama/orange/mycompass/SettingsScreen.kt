@@ -1,9 +1,10 @@
-package jp.saitama.orange.mycompass
+﻿package jp.saitama.orange.mycompass
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -11,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,20 +86,34 @@ fun SettingsScreen(
                     Text(text = stringResource(R.string.settings_distance_unit))
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    val unitTabs = listOf(
+                        stringResource(R.string.settings_unit_meter),
+                        stringResource(R.string.settings_unit_mile)
+                    )
+                    val selectedIndex = if (distanceUnit == "mile") 1 else 0
+
+                    TabRow(
+                        selectedTabIndex = selectedIndex,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        indicator = { tabPositions ->
+                            TabRowDefaults.Indicator(
+                                Modifier.tabIndicatorOffset(tabPositions[selectedIndex]),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     ) {
-                        FilterChip(
-                            selected = distanceUnit == "meter",
-                            onClick = { settingsViewModel.setDistanceUnit("meter") },
-                            label = { Text(stringResource(R.string.settings_unit_meter)) }
-                        )
-                        FilterChip(
-                            selected = distanceUnit == "mile",
-                            onClick = { settingsViewModel.setDistanceUnit("mile") },
-                            label = { Text(stringResource(R.string.settings_unit_mile)) }
-                        )
+                        unitTabs.forEachIndexed { index, label ->
+                            val isSelected = index == selectedIndex
+                            Tab(
+                                selected = isSelected,
+                                onClick = {
+                                    val unit = if (index == 0) "meter" else "mile"
+                                    settingsViewModel.setDistanceUnit(unit)
+                                },
+                                text = { Text(label) }
+                            )
+                        }
                     }
                 }
             }

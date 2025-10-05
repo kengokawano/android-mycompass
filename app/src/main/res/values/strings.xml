@@ -1,80 +1,85 @@
-<resources>
-    <string name="app_name">コンパスアプリ</string>
+﻿<resources>
+    <string name="app_name">Compass App</string>
 
     <!-- About Screen -->
-    <string name="about_title">アプリについて</string>
-    <string name="about_version">バージョン 1.0</string>
-    <string name="about_features">機能</string>
-    <string name="about_feature1">リアルタイムのコンパス表示</string>
-    <string name="about_feature2">目標地点を登録（最大3件）</string>
-    <string name="about_feature3">目標地点までの方角と距離を表示</string>
-    <string name="about_feature4">地図で場所を検索・選択</string>
+    <string name="about_title">About</string>
+    <string name="about_version">Version 1.0</string>
+    <string name="about_version_label">Version</string>
+    <string name="about_features">Features</string>
+    <string name="about_feature1">Real-time compass display</string>
+    <string name="about_feature2">Register destinations (max 5)</string>
+    <string name="about_feature3">Show direction and distance</string>
+    <string name="about_feature4">Search and select locations on map</string>
     <string name="about_feature_bullet">• %1$s</string>
-    <string name="about_developer">開発者</string>
-    <string name="about_developer_location">日本 埼玉県</string>
-    <string name="about_developer_name">Orange Lab</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_developer_label">Developer</string>
+    <string name="about_developer_name">Orange Dev</string>
+    <string name="about_developer_location">Saitama, Japan</string>
+    <string name="about_contact">Contact</string>
+    <string name="about_contact_email">support@example.com</string>
 
     <!-- Settings Screen -->
-    <string name="settings_title">設定</string>
-    <string name="settings_general">一般設定</string>
-    <string name="settings_notifications">通知を有効にする</string>
-    <string name="settings_vibration">バイブレーション</string>
-    <string name="settings_display">表示設定</string>
-    <string name="settings_true_north_label">北の基準（真北で表示）</string>
-    <string name="settings_true_north_description">オン: 真北基準 / オフ: 磁北基準</string>
-    <string name="settings_ar_mode">ARモード</string>
-    <string name="settings_ar_description">カメラ映像に3Dコンパスを重ねて表示</string>
-    <string name="settings_distance_unit">距離の単位</string>
-    <string name="settings_unit_meter">メートル</string>
-    <string name="settings_unit_mile">マイル</string>
-    <string name="settings_data">データ管理</string>
-    <string name="settings_clear_destinations">登録地点をすべて削除</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_general">General</string>
+    <string name="settings_notifications">Enable notifications</string>
+    <string name="settings_vibration">Vibration</string>
+    <string name="settings_display">Display</string>
+    <string name="settings_true_north_label">True north basis</string>
+    <string name="settings_true_north_description">On: true north / Off: magnetic north</string>
+    <string name="settings_ar_mode">AR Mode</string>
+    <string name="settings_ar_description">Overlay 3D compass on camera view</string>
+    <string name="settings_distance_unit">Distance unit</string>
+    <string name="settings_unit_meter">Meter</string>
+    <string name="settings_unit_mile">Mile</string>
+    <string name="settings_data">Data Management</string>
+    <string name="settings_clear_destinations">Clear all destinations</string>
 
     <!-- Compass -->
     <string name="compass_heading">%1$d°</string>
-    <string name="compass_accuracy_label">精度 %1$s</string>
-    <string name="compass_accuracy_high">良</string>
-    <string name="compass_accuracy_medium">中</string>
-    <string name="compass_accuracy_low">低</string>
-    <string name="compass_registered_destinations">登録地点</string>
+    <string name="compass_accuracy_label">Accuracy %1$s</string>
+    <string name="compass_accuracy_high">High</string>
+    <string name="compass_accuracy_medium">Medium</string>
+    <string name="compass_accuracy_low">Low</string>
+    <string name="compass_registered_destinations">Registered destinations</string>
     <string name="compass_bearing_distance">%1$d° / %2$s</string>
     <string name="distance_feet_short">%1$s</string>
-    <string name="distance_miles_short_two_decimals">%.2fマイル</string>
+    <string name="distance_miles_short_two_decimals">%.2fmi</string>
     <string name="distance_miles_short">%1$s</string>
     <string name="distance_meters_short">%1$s</string>
     <string name="distance_kilometers_short_one_decimal">%.1fkm</string>
     <string name="distance_kilometers_short">%1$s</string>
-    <string name="cd_compass_image">コンパス画像</string>
+    <string name="cd_compass_image">Compass image</string>
 
     <!-- Map -->
-    <string name="map_title_select_location">地点を選択</string>
-    <string name="map_marker_current_location">現在地</string>
-    <string name="map_marker_selected_location">選択した地点</string>
-    <string name="map_register_button">登録 (%1$d/%2$d)</string>
-    <string name="map_input_name_label">名称</string>
-    <string name="map_selected_latitude">緯度: %1$.6f</string>
-    <string name="map_selected_longitude">経度: %1$.6f</string>
-    <string name="map_destinations_title">登録地点一覧</string>
-    <string name="map_search_placeholder">場所を検索...</string>
-    <string name="map_search_button">検索</string>
-    <string name="map_search_error_network">通信に失敗しました。ネットワークを確認して再試行してください。</string>
-    <string name="map_search_error_client">検索リクエストが拒否されました。</string>
-    <string name="map_search_error_server">検索サービスが現在利用できません。</string>
-    <string name="map_search_error_rate_limited">リクエストが多すぎます。少し待ってから再検索してください。</string>
-    <string name="map_search_error_unknown">検索に失敗しました。再度お試しください。</string>
-    <string name="map_search_no_results">該当する場所が見つかりませんでした。キーワードを変えてお試しください。</string>
-    <string name="map_rate_limit_message">あと%1$d秒</string>
+    <string name="map_title_select_location">Select Location</string>
+    <string name="map_marker_current_location">Current Location</string>
+    <string name="map_marker_selected_location">Selected Location</string>
+    <string name="map_register_button">Register (%1$d/%2$d)</string>
+    <string name="map_input_name_label">Name</string>
+    <string name="map_selected_latitude">Lat: %1$.6f</string>
+    <string name="map_selected_longitude">Lon: %1$.6f</string>
+    <string name="map_destinations_title">Destinations</string>
+    <string name="map_search_placeholder">Search location...</string>
+    <string name="map_search_button">Search</string>
+    <string name="map_search_error_network">Connection failed. Check your network and try again.</string>
+    <string name="map_search_error_client">Search request was rejected.</string>
+    <string name="map_search_error_server">Search service is unavailable right now.</string>
+    <string name="map_search_error_rate_limited">Too many requests. Please wait a moment and try again.</string>
+    <string name="map_search_error_unknown">Search failed. Please try again.</string>
+    <string name="map_search_no_results">No places found. Try a different keyword.</string>
+    <string name="map_rate_limit_message">Please wait %1$d seconds</string>
+    <string name="map_data_credit">Map data © OpenStreetMap contributors</string>
 
     <!-- Accessibility -->
-    <string name="cd_open_map">地図を開く</string>
-    <string name="cd_open_settings">設定を開く</string>
-    <string name="cd_open_about">アプリ情報を開く</string>
-    <string name="cd_search">検索</string>
-    <string name="cd_delete">削除</string>
+    <string name="cd_open_map">Open map</string>
+    <string name="cd_open_settings">Open settings</string>
+    <string name="cd_open_about">Open about</string>
+    <string name="cd_search">Search</string>
+    <string name="cd_delete">Delete</string>
 
     <!-- Errors -->
-    <string name="error_sensor_unavailable">この端末ではセンサーが利用できません</string>
+    <string name="error_sensor_unavailable">Sensor not available on this device</string>
 
     <!-- Common -->
-    <string name="back">戻る</string>
+    <string name="back">Back</string>
 </resources>
