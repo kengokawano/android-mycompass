@@ -266,6 +266,22 @@ fun MapScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    text = stringResource(R.string.map_data_credit),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .padding(vertical = 4.dp, horizontal = 8.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     ) { innerPadding ->
         Box(
@@ -493,23 +509,6 @@ fun MapScreen(
                             }
                         }
                     }
-                }
-
-                // Footer: OpenStreetMap credit
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Text(
-                        text = stringResource(R.string.map_data_credit),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .padding(vertical = 4.dp, horizontal = 8.dp)
-                            .fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 

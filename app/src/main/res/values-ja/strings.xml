@@ -54,7 +54,7 @@
     <string name="cd_compass_image">コンパス画像</string>
 
     <!-- Map -->
-    <string name="map_title_select_location">地点を選択</string>
+    <string name="map_title_select_location">ぼくのばしょを登録</string>
     <string name="map_marker_current_location">現在地</string>
     <string name="map_marker_selected_location">選択した地点</string>
     <string name="map_register_button">登録 (%1$d/%2$d)</string>
