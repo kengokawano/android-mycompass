@@ -7,8 +7,8 @@
     <string name="about_version_label">バージョン</string>
     <string name="about_features">機能</string>
     <string name="about_feature1">リアルタイムのコンパス表示</string>
-    <string name="about_feature2">目標地点を登録（最大5件）</string>
-    <string name="about_feature3">目標地点までの方角と距離を表示</string>
+    <string name="about_feature2">ぼくのばしょを登録（最大8件）</string>
+    <string name="about_feature3">ぼくのばしょまでの方角と距離を表示</string>
     <string name="about_feature4">地図で場所を検索・選択</string>
     <string name="about_feature_bullet">• %1$s</string>
     <string name="about_developer">開発者</string>

@@ -6,7 +6,7 @@
     <string name="about_version">Version 1.0</string>
     <string name="about_features">Features</string>
     <string name="about_feature1">Real-time compass display</string>
-    <string name="about_feature2">Register destinations (max 5)</string>
+    <string name="about_feature2">Register My Place (max 8)</string>
     <string name="about_feature3">Show direction and distance</string>
     <string name="about_feature4">Search and select locations on map</string>
     <string name="about_feature_bullet">• %1$s</string>

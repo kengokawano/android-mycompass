@@ -278,11 +278,11 @@ fun MapScreen(
             ) {
                 Spacer(modifier = Modifier.height(80.dp)) // Space for search bar
 
-                // Map section (flexible height)
+                // Map section (fixed height)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
+                        .height(400.dp)
                 ) {
                 AndroidView(
                     factory = { ctx ->

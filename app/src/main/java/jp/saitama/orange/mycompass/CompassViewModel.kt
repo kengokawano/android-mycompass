@@ -186,6 +186,17 @@ class CompassViewModel(application: Application) : AndroidViewModel(application)
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
+            // First, get last known location immediately
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    location?.let {
+                        viewModelScope.launch {
+                            _currentLocation.value = it
+                        }
+                    }
+                }
+            } catch (_: SecurityException) {}
+
             val locationRequest = LocationRequest.Builder(
                 Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                 3000L
