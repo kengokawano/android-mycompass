@@ -267,22 +267,6 @@ fun MapScreen(
                 }
             )
         },
-        bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Text(
-                    text = stringResource(R.string.map_data_credit),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .padding(vertical = 4.dp, horizontal = 8.dp)
-                        .fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -300,79 +284,107 @@ fun MapScreen(
                         .fillMaxWidth()
                         .height(400.dp)
                 ) {
-                AndroidView(
-                    factory = { ctx ->
-                        MapView(ctx).apply {
-                            setTileSource(TileSourceFactory.MAPNIK)
-                            setMultiTouchControls(true)
-                            controller.setZoom(15.0)
+                    AndroidView(
+                        factory = { ctx ->
+                            MapView(ctx).apply {
+                                setTileSource(TileSourceFactory.MAPNIK)
+                                setMultiTouchControls(true)
+                                controller.setZoom(15.0)
 
-                            // Set initial center
-                            val initialCenter = currentLocation ?: GeoPoint(35.6812, 139.7671)
-                            controller.setCenter(initialCenter)
+                                // Set initial center
+                                val initialCenter = currentLocation ?: GeoPoint(35.6812, 139.7671)
+                                controller.setCenter(initialCenter)
 
-                            // Add location overlay
-                            val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(ctx), this)
-                            locationOverlay.enableMyLocation()
-                            overlays.add(locationOverlay)
+                                // Add location overlay
+                                val locationOverlay =
+                                    MyLocationNewOverlay(GpsMyLocationProvider(ctx), this)
+                                locationOverlay.enableMyLocation()
+                                overlays.add(locationOverlay)
 
-                            // Add initial marker if current location exists
-                            currentLocation?.let { loc ->
-                                val marker = Marker(this).apply {
-                                    position = loc
-                                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                                    title = ctx.getString(R.string.map_marker_current_location)
-                                }
-                                overlays.add(marker)
-                                currentMarker = marker
-                            }
-
-                            // Add tap event listener
-                            val mapEventsReceiver = object : MapEventsReceiver {
-                                override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
-                                    p?.let {
-                                        selectedLocation = it
-                                        // Set default name from coordinates
-                                        val defaultName = "${String.format("%.4f", it.latitude)}, ${String.format("%.4f", it.longitude)}"
-                                        destinationName = TextFieldValue(defaultName)
-                                        focusManager.clearFocus(force = true)
-
-                                        // Remove old marker
-                                        currentMarker?.let { marker ->
-                                            overlays.remove(marker)
-                                        }
-
-                                        // Add new marker
-                                        val marker = Marker(this@apply).apply {
-                                            position = it
-                                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                                            title = ctx.getString(R.string.map_marker_selected_location)
-                                        }
-                                        overlays.add(marker)
-                                        currentMarker = marker
-                                        invalidate()
+                                // Add initial marker if current location exists
+                                currentLocation?.let { loc ->
+                                    val marker = Marker(this).apply {
+                                        position = loc
+                                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                        title =
+                                            ctx.getString(R.string.map_marker_current_location)
                                     }
-                                    return true
+                                    overlays.add(marker)
+                                    currentMarker = marker
                                 }
 
-                                override fun longPressHelper(p: GeoPoint?): Boolean {
-                                    return false
+                                // Add tap event listener
+                                val mapEventsReceiver = object : MapEventsReceiver {
+                                    override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
+                                        p?.let {
+                                            selectedLocation = it
+                                            // Set default name from coordinates
+                                            val defaultName =
+                                                "${String.format("%.4f", it.latitude)}, ${
+                                                    String.format(
+                                                        "%.4f",
+                                                        it.longitude
+                                                    )
+                                                }"
+                                            destinationName = TextFieldValue(defaultName)
+                                            focusManager.clearFocus(force = true)
+
+                                            // Remove old marker
+                                            currentMarker?.let { marker ->
+                                                overlays.remove(marker)
+                                            }
+
+                                            // Add new marker
+                                            val marker = Marker(this@apply).apply {
+                                                position = it
+                                                setAnchor(
+                                                    Marker.ANCHOR_CENTER,
+                                                    Marker.ANCHOR_BOTTOM
+                                                )
+                                                title =
+                                                    ctx.getString(R.string.map_marker_selected_location)
+                                            }
+                                            overlays.add(marker)
+                                            currentMarker = marker
+                                            invalidate()
+                                        }
+                                        return true
+                                    }
+
+                                    override fun longPressHelper(p: GeoPoint?): Boolean {
+                                        return false
+                                    }
+                                }
+                                overlays.add(MapEventsOverlay(mapEventsReceiver))
+                                mapView = this
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        update = { map ->
+                            currentLocation?.let { loc ->
+                                if (map.overlays.none { it is Marker && it.position == loc }) {
+                                    map.controller.setCenter(loc)
                                 }
                             }
-                            overlays.add(MapEventsOverlay(mapEventsReceiver))
-                            mapView = this
                         }
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                    update = { map ->
-                        currentLocation?.let { loc ->
-                            if (map.overlays.none { it is Marker && it.position == loc }) {
-                                map.controller.setCenter(loc)
-                            }
-                        }
-                    }
-                )
-            }
+                    )
+                }
+
+                // Credit section
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    Text(
+                        text = stringResource(R.string.map_data_credit),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .padding(vertical = 4.dp, horizontal = 8.dp)
+                            .fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 // Bottom input section with destinations list
                 Surface(
