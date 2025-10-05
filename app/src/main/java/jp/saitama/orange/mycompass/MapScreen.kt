@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.text.style.TextAlign
 import androidx.core.content.ContextCompat
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -277,11 +278,11 @@ fun MapScreen(
             ) {
                 Spacer(modifier = Modifier.height(80.dp)) // Space for search bar
 
-                // Map section (fixed height)
+                // Map section (flexible height)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(400.dp)
+                        .weight(1f)
                 ) {
                 AndroidView(
                     factory = { ctx ->
@@ -451,20 +452,20 @@ fun MapScreen(
 
                             LazyColumn(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 items(destinations) { destination ->
                                     Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
+                                            .padding(vertical = 2.dp),
                                         colors = CardDefaults.cardColors(
                                             containerColor = Color(0xFFFFF59D)
                                         )
                                     ) {
                                         Row(
                                             modifier = Modifier
-                                                .padding(8.dp)
+                                                .padding(6.dp)
                                                 .fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
@@ -482,7 +483,8 @@ fun MapScreen(
                                                 Icon(
                                                     imageVector = Icons.Default.Close,
                                                     contentDescription = stringResource(R.string.cd_delete),
-                                                    modifier = Modifier.size(16.dp)
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = Color.Black
                                                 )
                                             }
                                         }
@@ -491,6 +493,23 @@ fun MapScreen(
                             }
                         }
                     }
+                }
+
+                // Footer: OpenStreetMap credit
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    Text(
+                        text = stringResource(R.string.map_data_credit),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .padding(vertical = 4.dp, horizontal = 8.dp)
+                            .fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 

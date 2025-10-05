@@ -64,6 +64,7 @@
     <string name="map_search_error_unknown">Search failed. Please try again.</string>
     <string name="map_search_no_results">No places found. Try a different keyword.</string>
     <string name="map_rate_limit_message">Please wait %1$d seconds</string>
+    <string name="map_data_credit">Map data © OpenStreetMap contributors</string>
 
     <!-- Accessibility -->
     <string name="cd_open_map">Open map</string>
