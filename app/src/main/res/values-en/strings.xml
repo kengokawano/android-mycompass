@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Compass App</string>
+    <string name="app_name">My Compass</string>
 
     <!-- About Screen -->
     <string name="about_title">About</string>
@@ -13,6 +13,10 @@
     <string name="about_developer">Developer</string>
     <string name="about_developer_location">Saitama, Japan</string>
     <string name="about_developer_name">Orange Lab</string>
+    <string name="about_contact_label">Feedback &amp; Contact</string>
+    <string name="about_contact_email">contact@orange.saitama.jp</string>
+    <string name="about_privacy_policy">Privacy Policy</string>
+    <string name="about_privacy_policy_url">https://orange.saitama.jp/docs/mycompass/privacy-policy/</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
