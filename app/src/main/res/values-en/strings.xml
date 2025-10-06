@@ -32,7 +32,7 @@
     <string name="settings_unit_meter">Meter</string>
     <string name="settings_unit_mile">Mile</string>
     <string name="settings_data">Data Management</string>
-    <string name="settings_clear_destinations">Clear all destinations</string>
+    <string name="settings_clear_destinations">Clear all My Places</string>
 
     <!-- Compass -->
     <string name="compass_heading">%1$d°</string>
@@ -40,7 +40,7 @@
     <string name="compass_accuracy_high">High</string>
     <string name="compass_accuracy_medium">Medium</string>
     <string name="compass_accuracy_low">Low</string>
-    <string name="compass_registered_destinations">Registered destinations</string>
+    <string name="compass_registered_destinations">My Places</string>
     <string name="compass_bearing_distance">%1$d° / %2$s</string>
     <string name="distance_feet_short">%1$s</string>
     <string name="distance_miles_short_two_decimals">%.2fmi</string>
@@ -58,7 +58,7 @@
     <string name="map_input_name_label">Name</string>
     <string name="map_selected_latitude">Lat: %1$.6f</string>
     <string name="map_selected_longitude">Lon: %1$.6f</string>
-    <string name="map_destinations_title">Destinations</string>
+    <string name="map_destinations_title">My Places</string>
     <string name="map_search_placeholder">Search location...</string>
     <string name="map_search_button">Search</string>
     <string name="map_search_error_network">Connection failed. Check your network and try again.</string>

@@ -35,7 +35,7 @@
     <string name="settings_unit_meter">メートル</string>
     <string name="settings_unit_mile">マイル</string>
     <string name="settings_data">データ管理</string>
-    <string name="settings_clear_destinations">登録地点をすべて削除</string>
+    <string name="settings_clear_destinations">「ぼくのばしょ」をすべて削除</string>
 
     <!-- Compass -->
     <string name="compass_heading">%1$d°</string>
@@ -43,7 +43,7 @@
     <string name="compass_accuracy_high">良</string>
     <string name="compass_accuracy_medium">中</string>
     <string name="compass_accuracy_low">低</string>
-    <string name="compass_registered_destinations">登録地点</string>
+    <string name="compass_registered_destinations">ぼくのばしょ</string>
     <string name="compass_bearing_distance">%1$d° / %2$s</string>
     <string name="distance_feet_short">%1$s</string>
     <string name="distance_miles_short_two_decimals">%.2fマイル</string>
@@ -61,7 +61,7 @@
     <string name="map_input_name_label">名称</string>
     <string name="map_selected_latitude">緯度: %1$.6f</string>
     <string name="map_selected_longitude">経度: %1$.6f</string>
-    <string name="map_destinations_title">登録地点一覧</string>
+    <string name="map_destinations_title">ぼくのばしょ一覧</string>
     <string name="map_search_placeholder">場所を検索...</string>
     <string name="map_search_button">検索</string>
     <string name="map_search_error_network">通信に失敗しました。ネットワークを確認して再試行してください。</string>

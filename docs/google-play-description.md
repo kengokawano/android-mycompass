@@ -1,7 +1,7 @@
 # マイコンパス - Google Play ストア説明文
 
 ## 簡単な説明（80文字以内）
-お気に入りの場所への方角と距離がわかるコンパスアプリ。最大5箇所まで登録可能。
+お気に入りの場所への方角と距離がわかるコンパスアプリ。最大8箇所の「ぼくのばしょ」を登録可能。
 
 ## 詳細な説明（4000文字以内）
 
@@ -13,7 +13,7 @@
 ・真北・磁北の切り替え対応
 ・センサー精度の表示
 
-◆ お気に入り場所の登録（最大5箇所）
+◆ 「ぼくのばしょ」の登録（最大8箇所）
 ・地図で場所を検索・選択
 ・登録地点への方角と距離を表示
 ・オフラインでも方角・距離を確認可能
@@ -45,7 +45,7 @@
 # My Compass - Google Play Store Description
 
 ## Short Description (80 characters max)
-Compass app showing direction & distance to favorite places. Up to 5 locations.
+Compass app showing direction & distance to favorite places. Up to 8 locations.
 
 ## Full Description (4000 characters max)
 
@@ -57,7 +57,7 @@ A simple compass app that shows direction and distance to your favorite places a
 ・True north / Magnetic north switching
 ・Sensor accuracy indicator
 
-◆ Favorite Places Registration (Up to 5 locations)
+◆ My Place Registration (Up to 8 locations)
 ・Search and select places on map
 ・Shows direction and distance to registered points
 ・Works offline for direction and distance
