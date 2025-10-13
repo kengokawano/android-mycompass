@@ -21,12 +21,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _distanceUnit = MutableStateFlow("meter")
     val distanceUnit: StateFlow<String> = _distanceUnit.asStateFlow()
 
+    // Stride length in cm for step calculation
+    private val _strideLengthCm = MutableStateFlow(70)
+    val strideLengthCm: StateFlow<Int> = _strideLengthCm.asStateFlow()
+
     init {
         viewModelScope.launch {
             // Load persisted values once on startup
             val settings = dataStore.settingsFlow.first()
             _useTrueNorth.value = settings.useTrueNorth
             _distanceUnit.value = settings.distanceUnit
+            _strideLengthCm.value = settings.strideLengthCm
         }
     }
 
@@ -40,11 +45,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         persist()
     }
 
+    fun setStrideLengthCm(lengthCm: Int) {
+        _strideLengthCm.value = lengthCm
+        persist()
+    }
+
     private fun persist() {
         viewModelScope.launch {
             dataStore.saveSettings(
                 useTrueNorth = _useTrueNorth.value,
-                distanceUnit = _distanceUnit.value
+                distanceUnit = _distanceUnit.value,
+                strideLengthCm = _strideLengthCm.value
             )
         }
     }

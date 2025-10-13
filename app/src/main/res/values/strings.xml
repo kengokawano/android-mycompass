@@ -34,6 +34,9 @@
     <string name="settings_distance_unit">Distance unit</string>
     <string name="settings_unit_meter">Meter</string>
     <string name="settings_unit_mile">Mile</string>
+    <string name="settings_stride_length">歩幅</string>
+    <string name="settings_stride_length_description">歩数計算に使用する歩幅</string>
+    <string name="settings_stride_length_value">%1$d cm</string>
     <string name="settings_data">Data Management</string>
     <string name="settings_clear_destinations">Clear all destinations</string>
 
@@ -45,6 +48,7 @@
     <string name="compass_accuracy_low">Low</string>
     <string name="compass_registered_destinations">Registered destinations</string>
     <string name="compass_bearing_distance">%1$d° / %2$s</string>
+    <string name="compass_bearing_distance_with_steps">%1$d° / %2$s (約%3$s歩)</string>
     <string name="distance_feet_short">%1$s</string>
     <string name="distance_miles_short_two_decimals">%.2fmi</string>
     <string name="distance_miles_short">%1$s</string>

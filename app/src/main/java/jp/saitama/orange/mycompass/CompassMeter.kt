@@ -51,7 +51,8 @@ fun CompassMeter(
     sensorAccuracy: Int? = null,
     useTrueNorth: Boolean = false,
     declinationDeg: Float = 0f,
-    distanceUnit: String = "meter"
+    distanceUnit: String = "meter",
+    strideLengthCm: Int = 70
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -299,7 +300,8 @@ fun CompassMeter(
                 destinationInfoList = destinationInfoList,
                 useTrueNorth = useTrueNorth,
                 declinationDeg = declinationDeg,
-                distanceUnit = distanceUnit
+                distanceUnit = distanceUnit,
+                strideLengthCm = strideLengthCm
             )
         }
     }
@@ -310,7 +312,8 @@ fun DestinationInfoDisplay(
     destinationInfoList: List<DestinationInfo>,
     useTrueNorth: Boolean = false,
     declinationDeg: Float = 0f,
-    distanceUnit: String = "meter"
+    distanceUnit: String = "meter",
+    strideLengthCm: Int = 70
 ) {
     Column(
         modifier = Modifier
@@ -351,8 +354,18 @@ fun DestinationInfoDisplay(
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
+
+                    val distanceStr = formatDistance(destInfo.distance, distanceUnit)
+                    val displayText = if (destInfo.distance >= 30f) {
+                        val steps = (destInfo.distance / (strideLengthCm / 100f)).toInt()
+                        val stepsFormatted = String.format("%,d", steps)
+                        stringResource(R.string.compass_bearing_distance_with_steps, bearingDisplay.toInt(), distanceStr, stepsFormatted)
+                    } else {
+                        "${bearingDisplay.toInt()}° / $distanceStr"
+                    }
+
                     Text(
-                        text = "${bearingDisplay.toInt()}° / ${formatDistance(destInfo.distance, distanceUnit)}",
+                        text = displayText,
                         fontSize = 16.sp,
                         color = DestinationAccentColor,
                         textAlign = TextAlign.End,

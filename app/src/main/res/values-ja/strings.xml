@@ -34,6 +34,9 @@
     <string name="settings_distance_unit">距離の単位</string>
     <string name="settings_unit_meter">メートル</string>
     <string name="settings_unit_mile">マイル</string>
+    <string name="settings_stride_length">歩幅</string>
+    <string name="settings_stride_length_description">歩数計算に使用する歩幅</string>
+    <string name="settings_stride_length_value">%1$d cm</string>
     <string name="settings_data">データ管理</string>
     <string name="settings_clear_destinations">「ぼくのばしょ」をすべて削除</string>
 
@@ -45,6 +48,7 @@
     <string name="compass_accuracy_low">低</string>
     <string name="compass_registered_destinations">ぼくのばしょ</string>
     <string name="compass_bearing_distance">%1$d° / %2$s</string>
+    <string name="compass_bearing_distance_with_steps">%1$d° / %2$s (約%3$s歩)</string>
     <string name="distance_feet_short">%1$s</string>
     <string name="distance_miles_short_two_decimals">%.2fマイル</string>
     <string name="distance_miles_short">%1$s</string>

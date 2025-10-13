@@ -22,6 +22,7 @@ fun SettingsScreen(
 ) {
     val useTrueNorth by settingsViewModel.useTrueNorth.collectAsState()
     val distanceUnit by settingsViewModel.distanceUnit.collectAsState()
+    val strideLengthCm by settingsViewModel.strideLengthCm.collectAsState()
 
     Scaffold(
         topBar = {
@@ -114,6 +115,40 @@ fun SettingsScreen(
                                 text = { Text(label) }
                             )
                         }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    // Stride length setting
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = stringResource(R.string.settings_stride_length))
+                                Text(
+                                    text = stringResource(R.string.settings_stride_length_description),
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text(
+                                text = stringResource(R.string.settings_stride_length_value, strideLengthCm),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Slider(
+                            value = strideLengthCm.toFloat(),
+                            onValueChange = { settingsViewModel.setStrideLengthCm(it.toInt()) },
+                            valueRange = 60f..80f,
+                            steps = 19,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }

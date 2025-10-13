@@ -221,7 +221,8 @@ fun CompassApp(
                     sensorAccuracy = sensorAccuracy,
                     useTrueNorth = useTrueNorth,
                     declinationDeg = declinationDeg,
-                    distanceUnit = settingsViewModel.distanceUnit.collectAsState().value
+                    distanceUnit = settingsViewModel.distanceUnit.collectAsState().value,
+                    strideLengthCm = settingsViewModel.strideLengthCm.collectAsState().value
                 )
             }
         }
