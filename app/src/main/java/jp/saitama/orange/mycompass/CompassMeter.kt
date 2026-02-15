@@ -52,20 +52,26 @@ fun CompassMeter(
     useTrueNorth: Boolean = false,
     declinationDeg: Float = 0f,
     distanceUnit: String = "meter",
-    strideLengthCm: Int = 70
+    strideLengthCm: Int = 70,
+    compassType: Int = 0
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Effective heading for display text
+        val displayAzimuth = if (useTrueNorth) {
+            ((azimuth + declinationDeg + 360f) % 360f)
+        } else azimuth
+
         Text(
-            text = "${azimuth.toInt()}°",
+            text = "${displayAzimuth.toInt()}°",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
 
-        // Fixed upward triangle just below the angle text
+        // Fixed upward triangle (Device front direction)
         Spacer(modifier = Modifier.height(6.dp))
         FixedUpTriangle(
             color = MaterialTheme.colorScheme.primary,
@@ -83,68 +89,81 @@ fun CompassMeter(
             val boxSizePx = constraints.maxWidth.toFloat()
             val density = LocalDensity.current.density
 
-            // Effective azimuth for chosen basis
-            val effectiveAzimuth = if (useTrueNorth) {
-                ((azimuth + declinationDeg + 360f) % 360f)
-            } else azimuth
+            // The dial is rotated by displayAzimuth so that "North" on the dial
+            // points to actual North relative to the device.
+            val dialRotation = -displayAzimuth
 
-            // Rotating container for the compass image only
+            // Rotating container for the compass image
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .rotate(-effectiveAzimuth)
+                    .rotate(dialRotation)
             ) {
+                val compassImageRes = if (compassType == 1) R.drawable.compass02 else R.drawable.compass01
                 Image(
-                    painter = painterResource(id = R.drawable.compass_photo),
+                    painter = painterResource(id = compassImageRes),
                     contentDescription = "Compass Image",
                     modifier = Modifier.fillMaxSize()
                 )
             }
 
-            // Overlay rotated with the compass: draw destinations by absolute magnetic bearing
+            // Overlay rotated with the dial
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .rotate(-effectiveAzimuth)
+                    .rotate(dialRotation)
             ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val centerX = size.width / 2
-                    val centerY = size.height / 2
-                    val radius = size.width / 2
+                if (compassType == 0) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val centerX = size.width / 2
+                        val centerY = size.height / 2
+                        val radius = size.width / 2
 
-                    // North marker (red), rotates with overlay to indicate north direction
-                    drawLine(
-                        color = Color.Red,
-                        start = Offset(x = centerX, y = 0f),
-                        end = Offset(x = centerX, y = size.height * 0.15f),
-                        strokeWidth = 8f
-                    )
-
-                    destinationInfoList.forEach { destInfo ->
-                        val bearingForDraw = if (useTrueNorth) {
-                            ((destInfo.bearing + declinationDeg + 360f) % 360f)
-                        } else destInfo.bearing
-                        val angleRad = Math.toRadians(bearingForDraw.toDouble() - 90)
-
-                        val outerX = centerX + radius * cos(angleRad).toFloat()
-                        val outerY = centerY + radius * sin(angleRad).toFloat()
-                        val innerX = centerX + (radius - size.width * 0.15f) * cos(angleRad).toFloat()
-                        val innerY = centerY + (radius - size.height * 0.15f) * sin(angleRad).toFloat()
-
+                        // North marker (red) on the dial
                         drawLine(
-                            color = DestinationAccentColor,
-                            start = Offset(x = outerX, y = outerY),
-                            end = Offset(x = innerX, y = innerY),
+                            color = Color.Red,
+                            start = Offset(x = centerX, y = 0f),
+                            end = Offset(x = centerX, y = size.height * 0.15f),
                             strokeWidth = 8f
                         )
+
+                        destinationInfoList.forEach { destInfo ->
+                            // DestInfo.bearing is True Bearing.
+                            // Since the dial is already adjusted to North (True or Magnetic),
+                            // we need to place the marker at its bearing relative to True North.
+                            // If the dial is Magnetic, we subtract declination to align it.
+                            val drawBearing = if (useTrueNorth) {
+                                destInfo.bearing
+                            } else {
+                                // Convert True Bearing to Magnetic Bearing for the magnetic dial
+                                ((destInfo.bearing - declinationDeg + 360f) % 360f)
+                            }
+                            
+                            val angleRad = Math.toRadians(drawBearing.toDouble() - 90)
+
+                            val outerX = centerX + radius * cos(angleRad).toFloat()
+                            val outerY = centerY + radius * sin(angleRad).toFloat()
+                            val innerX = centerX + (radius - size.width * 0.15f) * cos(angleRad).toFloat()
+                            val innerY = centerY + (radius - size.height * 0.15f) * sin(angleRad).toFloat()
+
+                            drawLine(
+                                color = DestinationAccentColor,
+                                start = Offset(x = outerX, y = outerY),
+                                end = Offset(x = innerX, y = innerY),
+                                strokeWidth = 8f
+                            )
+                        }
                     }
                 }
 
                 destinationInfoList.forEach { destInfo ->
-                    val bearingForDraw = if (useTrueNorth) {
-                        ((destInfo.bearing + declinationDeg + 360f) % 360f)
-                    } else destInfo.bearing
-                    val angleRad = Math.toRadians(bearingForDraw.toDouble() - 90)
+                    val drawBearing = if (useTrueNorth) {
+                        destInfo.bearing
+                    } else {
+                        ((destInfo.bearing - declinationDeg + 360f) % 360f)
+                    }
+
+                    val angleRad = Math.toRadians(drawBearing.toDouble() - 90)
                     val centerX = boxSizePx / 2f
                     val centerY = boxSizePx / 2f
 
@@ -167,7 +186,8 @@ fun CompassMeter(
                                 }
                             }
                             .graphicsLayer {
-                                rotationZ = effectiveAzimuth
+                                // Keep the flag/text upright relative to the screen
+                                rotationZ = -dialRotation
                             },
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -188,61 +208,37 @@ fun CompassMeter(
                 }
             }
 
-            // Subtle tilt indicator: small circle with a dot showing pitch/roll
+            // Tilt indicator (stays fixed relative to device)
             Box(
-                modifier = Modifier
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.BottomEnd
             ) {
                 val sizeDp = 72.dp
                 val strokeWidth = 2.dp
                 Box(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .size(sizeDp)
+                    modifier = Modifier.padding(12.dp).size(sizeDp)
                 ) {
                     val tiltDotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val r = size.minDimension / 2f
                         val center = Offset(size.width / 2f, size.height / 2f)
-
-                        // Outer circle (subtle)
                         drawCircle(
                             color = Color.Gray.copy(alpha = 0.25f),
                             radius = r,
                             center = center,
                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth.toPx())
                         )
-
-                        // Crosshair
-                        drawLine(
-                            color = Color.Gray.copy(alpha = 0.2f),
-                            start = Offset(center.x - r, center.y),
-                            end = Offset(center.x + r, center.y),
-                            strokeWidth = 1f
-                        )
-                        drawLine(
-                            color = Color.Gray.copy(alpha = 0.2f),
-                            start = Offset(center.x, center.y - r),
-                            end = Offset(center.x, center.y + r),
-                            strokeWidth = 1f
-                        )
-
-                        // Map pitch/roll (deg) to dot position. Edge ≈ 45°
                         val maxAngle = 45f
                         val nx = (roll / maxAngle).coerceIn(-1f, 1f)
                         val ny = (-pitch / maxAngle).coerceIn(-1f, 1f)
                         var dx = nx * r
                         var dy = ny * r
-                        // Clamp to circle boundary if outside
                         val len = kotlin.math.sqrt(dx * dx + dy * dy)
                         if (len > r) {
                             val scale = r / len
                             dx *= scale
                             dy *= scale
                         }
-
-                        // Dot
                         drawCircle(
                             color = tiltDotColor,
                             radius = r * 0.08f,
@@ -251,49 +247,8 @@ fun CompassMeter(
                     }
                 }
             }
-
-            // North marker now drawn in rotated overlay above
-
-            // Small accuracy chip (bottom-start)
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.BottomStart
-            ) {
-                val accText = when {
-                    headingAccuracyDeg != null -> {
-                        val qualityText = when {
-                            headingAccuracyDeg <= 7.5f -> stringResource(R.string.compass_accuracy_high)
-                            headingAccuracyDeg <= 20f -> stringResource(R.string.compass_accuracy_medium)
-                            else -> stringResource(R.string.compass_accuracy_low)
-                        }
-                        stringResource(R.string.compass_accuracy_label, qualityText)
-                    }
-                    sensorAccuracy != null -> when (sensorAccuracy) {
-                        3 -> stringResource(R.string.compass_accuracy_label, stringResource(R.string.compass_accuracy_high))
-                        2 -> stringResource(R.string.compass_accuracy_label, stringResource(R.string.compass_accuracy_medium))
-                        else -> stringResource(R.string.compass_accuracy_label, stringResource(R.string.compass_accuracy_low))
-                    }
-                    else -> null
-                }
-                accText?.let { txt ->
-                    Surface(
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                        tonalElevation = 2.dp,
-                        shape = MaterialTheme.shapes.small
-                    ) {
-                        Text(
-                            text = txt,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
         }
 
-        // Display destination info
         if (destinationInfoList.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             DestinationInfoDisplay(
@@ -316,9 +271,7 @@ fun DestinationInfoDisplay(
     strideLengthCm: Int = 70
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.Start
     ) {
         Text(
@@ -328,17 +281,16 @@ fun DestinationInfoDisplay(
             color = DestinationAccentColor
         )
         Spacer(modifier = Modifier.height(8.dp))
-
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 200.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(destinationInfoList) { destInfo ->
                 val bearingDisplay = if (useTrueNorth) {
-                    ((destInfo.bearing + declinationDeg + 360f) % 360f)
-                } else destInfo.bearing
+                    destInfo.bearing
+                } else {
+                    ((destInfo.bearing - declinationDeg + 360f) % 360f)
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -353,8 +305,6 @@ fun DestinationInfoDisplay(
                         color = DestinationAccentColor,
                         modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
-
                     val distanceStr = formatDistance(destInfo.distance, distanceUnit)
                     val displayText = if (destInfo.distance >= 30f) {
                         val steps = (destInfo.distance / (strideLengthCm / 100f)).toInt()
@@ -363,14 +313,12 @@ fun DestinationInfoDisplay(
                     } else {
                         "${bearingDisplay.toInt()}° / $distanceStr"
                     }
-
                     Text(
                         text = displayText,
                         fontSize = 16.sp,
                         color = DestinationAccentColor,
                         textAlign = TextAlign.End,
-                        modifier = Modifier
-                            .widthIn(min = 120.dp)
+                        modifier = Modifier.widthIn(min = 120.dp)
                     )
                 }
             }

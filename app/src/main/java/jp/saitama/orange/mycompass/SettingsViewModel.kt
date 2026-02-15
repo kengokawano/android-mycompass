@@ -25,6 +25,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _strideLengthCm = MutableStateFlow(70)
     val strideLengthCm: StateFlow<Int> = _strideLengthCm.asStateFlow()
 
+    // Compass image type (0 for compass01, 1 for compass02)
+    private val _compassType = MutableStateFlow(0)
+    val compassType: StateFlow<Int> = _compassType.asStateFlow()
+
     init {
         viewModelScope.launch {
             // Load persisted values once on startup
@@ -32,6 +36,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _useTrueNorth.value = settings.useTrueNorth
             _distanceUnit.value = settings.distanceUnit
             _strideLengthCm.value = settings.strideLengthCm
+            _compassType.value = settings.compassType
         }
     }
 
@@ -50,12 +55,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         persist()
     }
 
+    fun setCompassType(type: Int) {
+        _compassType.value = type
+        persist()
+    }
+
     private fun persist() {
         viewModelScope.launch {
             dataStore.saveSettings(
                 useTrueNorth = _useTrueNorth.value,
                 distanceUnit = _distanceUnit.value,
-                strideLengthCm = _strideLengthCm.value
+                strideLengthCm = _strideLengthCm.value,
+                compassType = _compassType.value
             )
         }
     }

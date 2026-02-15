@@ -2,9 +2,7 @@ package jp.saitama.orange.mycompass
 
 import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.LocationManager
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,16 +19,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.text.style.TextAlign
-import androidx.core.content.ContextCompat
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.osmdroid.config.Configuration
@@ -48,6 +45,7 @@ import java.net.URLEncoder
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.util.Locale
 
 data class SearchResult(
     val displayName: String,
@@ -75,21 +73,11 @@ data class SearchLocationResponse(
 
 object SearchRateLimiter {
     private var lastSearchTime = 0L
-    private const val MIN_SEARCH_INTERVAL = 5000L // 5 seconds
+    private const val MIN_SEARCH_INTERVAL = 1500L
 
     fun canSearch(): Boolean {
         val currentTime = System.currentTimeMillis()
         return currentTime - lastSearchTime >= MIN_SEARCH_INTERVAL
-    }
-
-    fun getRemainingTime(): Long {
-        val currentTime = System.currentTimeMillis()
-        val elapsed = currentTime - lastSearchTime
-        return if (elapsed < MIN_SEARCH_INTERVAL) {
-            (MIN_SEARCH_INTERVAL - elapsed) / 1000
-        } else {
-            0L
-        }
     }
 
     fun recordSearch() {
@@ -97,21 +85,24 @@ object SearchRateLimiter {
     }
 }
 
-suspend fun searchLocation(query: String): SearchLocationResponse {
+suspend fun searchLocation(query: String, viewBox: String? = null): SearchLocationResponse {
     return withContext(Dispatchers.IO) {
-        if (query.isBlank()) {
+        if (query.isBlank() || query.length < 2) {
             return@withContext SearchLocationResponse(emptyList())
         }
         try {
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
-            val urlString = "https://nominatim.openstreetmap.org/search?q=$encodedQuery&format=json&limit=5"
+            var urlString = "https://nominatim.openstreetmap.org/search?q=$encodedQuery&format=json&limit=10&addressdetails=1&accept-language=ja,en"
+            if (viewBox != null) {
+                urlString += "&viewbox=$viewBox"
+            }
 
             val url = URL(urlString)
             val connection = (url.openConnection() as HttpURLConnection).apply {
-                setRequestProperty("User-Agent", "CompassApp/1.0 (Android)")
+                setRequestProperty("User-Agent", "MyCompassApp/1.1 (Android; jp.saitama.orange.mycompass)")
                 setRequestProperty("Accept", "application/json")
-                connectTimeout = 10000
-                readTimeout = 10000
+                connectTimeout = 8000
+                readTimeout = 8000
                 requestMethod = "GET"
             }
 
@@ -164,53 +155,56 @@ fun MapScreen(
     var selectedLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var currentLocation by remember { mutableStateOf<GeoPoint?>(null) }
     var destinationName by remember { mutableStateOf(TextFieldValue("")) }
-    var shouldSelectAllOnFocus by remember { mutableStateOf(false) }
     var mapView by remember { mutableStateOf<MapView?>(null) }
     var currentMarker by remember { mutableStateOf<Marker?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
-    var rateLimitMessage by remember { mutableStateOf("") }
-
     var searchError by remember { mutableStateOf<SearchLocationError?>(null) }
-    var hasSearched by remember { mutableStateOf(false) }
 
-    LaunchedEffect(shouldSelectAllOnFocus) {
-        if (shouldSelectAllOnFocus) {
-            destinationName = destinationName.copy(selection = TextRange(0, destinationName.text.length))
-            shouldSelectAllOnFocus = false
+    // Helper to get current map viewbox
+    fun getMapViewBox(): String? {
+        val mv = mapView ?: return null
+        val box = mv.boundingBox
+        return "${box.lonWest},${box.latNorth},${box.lonEast},${box.latSouth}"
+    }
+
+    val performSearch: (String) -> Unit = { query ->
+        if (query.length < 2) {
+            searchResults = emptyList()
+        } else if (SearchRateLimiter.canSearch()) {
+            scope.launch {
+                isSearching = true
+                searchError = null
+                try {
+                    val viewBox = getMapViewBox()
+                    val response = searchLocation(query, viewBox)
+                    if (response.error != null) {
+                        if (response.error.type != SearchErrorType.RATE_LIMITED) {
+                            searchResults = emptyList()
+                        }
+                        searchError = response.error
+                    } else {
+                        searchResults = response.results
+                        searchError = null
+                    }
+                } finally {
+                    isSearching = false
+                    SearchRateLimiter.recordSearch()
+                }
+            }
         }
     }
 
-    val performSearch: () -> Unit = {
-        when {
-            searchQuery.isBlank() || isSearching -> Unit
-            SearchRateLimiter.canSearch() -> {
-                rateLimitMessage = ""
-                scope.launch {
-                    isSearching = true
-                    searchError = null
-                    hasSearched = false
-                    try {
-                        val response = searchLocation(searchQuery)
-                        hasSearched = true
-                        if (response.error != null) {
-                            searchResults = emptyList()
-                            searchError = response.error
-                        } else {
-                            searchResults = response.results
-                            searchError = null
-                        }
-                    } finally {
-                        isSearching = false
-                        SearchRateLimiter.recordSearch()
-                    }
-                }
-            }
-            else -> {
-                val remaining = SearchRateLimiter.getRemainingTime()
-                rateLimitMessage = context.getString(R.string.map_rate_limit_message, remaining)
-            }
+    // Debounced search logic
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isBlank()) {
+            searchResults = emptyList()
+            return@LaunchedEffect
+        }
+        if (searchQuery.length >= 2) {
+            delay(800)
+            performSearch(searchQuery)
         }
     }
 
@@ -240,9 +234,7 @@ fun MapScreen(
                     selectedLocation = geoPoint
                     mapView?.controller?.animateTo(geoPoint)
                 }
-            } catch (e: SecurityException) {
-                // Permission not granted
-            }
+            } catch (_: SecurityException) { }
         }
     }
 
@@ -276,13 +268,14 @@ fun MapScreen(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                Spacer(modifier = Modifier.height(80.dp)) // Space for search bar
+                Spacer(modifier = Modifier.height(72.dp))
 
-                // Map section (fixed height)
+                // Map section
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(400.dp)
+                        .weight(1f)
+                        .heightIn(min = 300.dp)
                 ) {
                     AndroidView(
                         factory = { ctx ->
@@ -291,58 +284,26 @@ fun MapScreen(
                                 setMultiTouchControls(true)
                                 controller.setZoom(15.0)
 
-                                // Set initial center
                                 val initialCenter = currentLocation ?: GeoPoint(35.6812, 139.7671)
                                 controller.setCenter(initialCenter)
 
-                                // Add location overlay
-                                val locationOverlay =
-                                    MyLocationNewOverlay(GpsMyLocationProvider(ctx), this)
+                                val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(ctx), this)
                                 locationOverlay.enableMyLocation()
                                 overlays.add(locationOverlay)
 
-                                // Add initial marker if current location exists
-                                currentLocation?.let { loc ->
-                                    val marker = Marker(this).apply {
-                                        position = loc
-                                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                                        title =
-                                            ctx.getString(R.string.map_marker_current_location)
-                                    }
-                                    overlays.add(marker)
-                                    currentMarker = marker
-                                }
-
-                                // Add tap event listener
                                 val mapEventsReceiver = object : MapEventsReceiver {
                                     override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
                                         p?.let {
                                             selectedLocation = it
-                                            // Set default name from coordinates
-                                            val defaultName =
-                                                "${String.format("%.4f", it.latitude)}, ${
-                                                    String.format(
-                                                        "%.4f",
-                                                        it.longitude
-                                                    )
-                                                }"
+                                            val defaultName = String.format(Locale.US, "%.4f, %.4f", it.latitude, it.longitude)
                                             destinationName = TextFieldValue(defaultName)
                                             focusManager.clearFocus(force = true)
 
-                                            // Remove old marker
-                                            currentMarker?.let { marker ->
-                                                overlays.remove(marker)
-                                            }
-
-                                            // Add new marker
+                                            currentMarker?.let { marker -> overlays.remove(marker) }
                                             val marker = Marker(this@apply).apply {
                                                 position = it
-                                                setAnchor(
-                                                    Marker.ANCHOR_CENTER,
-                                                    Marker.ANCHOR_BOTTOM
-                                                )
-                                                title =
-                                                    ctx.getString(R.string.map_marker_selected_location)
+                                                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                                title = ctx.getString(R.string.map_marker_selected_location)
                                             }
                                             overlays.add(marker)
                                             currentMarker = marker
@@ -350,287 +311,138 @@ fun MapScreen(
                                         }
                                         return true
                                     }
-
-                                    override fun longPressHelper(p: GeoPoint?): Boolean {
-                                        return false
-                                    }
+                                    override fun longPressHelper(p: GeoPoint?): Boolean = false
                                 }
                                 overlays.add(MapEventsOverlay(mapEventsReceiver))
                                 mapView = this
                             }
                         },
-                        modifier = Modifier.fillMaxSize(),
-                        update = { map ->
-                            currentLocation?.let { loc ->
-                                if (map.overlays.none { it is Marker && it.position == loc }) {
-                                    map.controller.setCenter(loc)
-                                }
-                            }
-                        }
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 
-                // Credit section
+                // Bottom input section
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Text(
-                        text = stringResource(R.string.map_data_credit),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .padding(vertical = 4.dp, horizontal = 8.dp)
-                            .fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                // Bottom input section with destinations list
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface),
                     tonalElevation = 8.dp
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                    ) {
-                        // Left side: Input section
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 8.dp)
-                        ) {
-                            // Register button
-                            Button(
-                                onClick = {
-                                    focusManager.clearFocus()
-                                    selectedLocation?.let { location ->
-                                        if (destinationName.text.isNotBlank()) {
-                                            val added = destinationViewModel.addDestination(
-                                                destinationName.text,
-                                                location.latitude,
-                                                location.longitude
-                                            )
-                                            if (added) {
-                                                destinationName = TextFieldValue("")
-                                                selectedLocation = null
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Button(
+                                    onClick = {
+                                        focusManager.clearFocus()
+                                        selectedLocation?.let { location ->
+                                            if (destinationName.text.isNotBlank()) {
+                                                val added = destinationViewModel.addDestination(
+                                                    destinationName.text,
+                                                    location.latitude,
+                                                    location.longitude
+                                                )
+                                                if (added) {
+                                                    destinationName = TextFieldValue("")
+                                                    selectedLocation = null
+                                                }
                                             }
                                         }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp),
-                                enabled = selectedLocation != null &&
-                                         destinationName.text.isNotBlank() &&
-                                         destinationViewModel.canAddMore()
-                            ) {
-                                Text(stringResource(R.string.map_register_button, destinations.size, Destination.MAX_DESTINATIONS))
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Name input
-                            OutlinedTextField(
-                                value = destinationName,
-                                onValueChange = { destinationName = it },
-                                label = { Text(stringResource(R.string.map_input_name_label)) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .onFocusChanged { focusState ->
-                                        if (focusState.isFocused) {
-                                            shouldSelectAllOnFocus = true
-                                        }
                                     },
-                                singleLine = true
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Display coordinates
-                            selectedLocation?.let { location ->
-                                Text(
-                                    text = stringResource(R.string.map_selected_latitude, location.latitude),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    text = stringResource(R.string.map_selected_longitude, location.longitude),
-                                    style = MaterialTheme.typography.bodySmall
+                                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                                    enabled = selectedLocation != null && destinationName.text.isNotBlank() && destinationViewModel.canAddMore()
+                                ) {
+                                    Text(stringResource(R.string.map_register_button, destinations.size, Destination.MAX_DESTINATIONS))
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedTextField(
+                                    value = destinationName,
+                                    onValueChange = { destinationName = it },
+                                    label = { Text(stringResource(R.string.map_input_name_label)) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
                                 )
                             }
-                        }
 
-                        // Right side: Destinations list
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 8.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.map_destinations_title),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                color = Color(0xFFFF9800)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            LazyColumn(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                items(destinations) { destination ->
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 2.dp),
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = Color(0xFFFFF59D)
-                                        )
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .padding(6.dp)
-                                                .fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
+                            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                                Text(
+                                    text = stringResource(R.string.map_destinations_title),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                    color = Color(0xFFFF9800)
+                                )
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    items(destinations) { destination ->
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF59D))
                                         ) {
-                                            Text(
-                                                text = destination.name,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = Color(0xFFFF9800),
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                            IconButton(
-                                                onClick = { destinationViewModel.removeDestination(destination.id) },
-                                                modifier = Modifier.size(24.dp)
+                                            Row(
+                                                modifier = Modifier.padding(4.dp).fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Close,
-                                                    contentDescription = stringResource(R.string.cd_delete),
-                                                    modifier = Modifier.size(16.dp),
-                                                    tint = Color.Black
-                                                )
+                                                Text(destination.name, style = MaterialTheme.typography.bodySmall, color = Color(0xFFFF9800), modifier = Modifier.weight(1f))
+                                                IconButton(onClick = { destinationViewModel.removeDestination(destination.id) }, modifier = Modifier.size(20.dp)) {
+                                                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
+                        Text(
+                            text = stringResource(R.string.map_data_credit),
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
 
-            // Search bar overlay (on top)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopStart)
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    tonalElevation = 8.dp,
-                    shadowElevation = 8.dp
-                ) {
+            // Search bar overlay
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Surface(modifier = Modifier.fillMaxWidth(), tonalElevation = 8.dp) {
                     OutlinedTextField(
                         value = searchQuery,
-                        onValueChange = {
-                            searchQuery = it
-                            if (it.isBlank()) {
-                                hasSearched = false
-                                searchError = null
-                                searchResults = emptyList()
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                         placeholder = { Text(stringResource(R.string.map_search_placeholder)) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.cd_search)) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
                             if (searchQuery.isNotBlank()) {
-                                Button(
-                                    onClick = { performSearch() },
-                                    enabled = !isSearching
-                                ) {
-                                    Text(stringResource(R.string.map_search_button))
+                                IconButton(onClick = { searchQuery = ""; searchResults = emptyList() }) {
+                                    Icon(Icons.Default.Close, contentDescription = null)
                                 }
                             }
                         },
-                        singleLine = true,
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            imeAction = androidx.compose.ui.text.input.ImeAction.Search
-                        ),
-                        keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                            onSearch = { performSearch() }
-                        )
+                        singleLine = true
                     )
                 }
 
-                // Rate limit message
-                if (rateLimitMessage.isNotEmpty()) {
-                    Text(
-                        text = rateLimitMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
-                }
+                if (isSearching) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
 
-                val errorMessage = searchError?.let { error ->
-                    when (error.type) {
-                        SearchErrorType.NETWORK -> stringResource(R.string.map_search_error_network)
-                        SearchErrorType.CLIENT -> stringResource(R.string.map_search_error_client)
-                        SearchErrorType.SERVER -> stringResource(R.string.map_search_error_server)
-                        SearchErrorType.RATE_LIMITED -> stringResource(R.string.map_search_error_rate_limited)
-                        SearchErrorType.UNKNOWN -> stringResource(R.string.map_search_error_unknown)
-                    }
-                }
-
-                if (errorMessage != null) {
-                    Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
-                } else if (!isSearching && hasSearched && searchResults.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.map_search_no_results),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
-                }
-
-                // Search results
                 if (searchResults.isNotEmpty()) {
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .heightIn(max = 200.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).heightIn(max = 300.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                     ) {
                         LazyColumn {
                             items(searchResults) { result ->
                                 ListItem(
-                                    headlineContent = { Text(result.displayName) },
+                                    headlineContent = { Text(result.displayName, style = MaterialTheme.typography.bodyMedium) },
                                     modifier = Modifier.clickable {
                                         val geoPoint = GeoPoint(result.lat, result.lon)
                                         selectedLocation = geoPoint
                                         destinationName = TextFieldValue(result.displayName)
                                         focusManager.clearFocus(force = true)
                                         mapView?.controller?.animateTo(geoPoint)
-                                        mapView?.controller?.setZoom(15.0)
-
-                                        // Remove old marker and add new one
-                                        currentMarker?.let { marker ->
-                                            mapView?.overlays?.remove(marker)
-                                        }
+                                        mapView?.controller?.setZoom(17.0)
+                                        
+                                        currentMarker?.let { marker -> mapView?.overlays?.remove(marker) }
                                         val marker = Marker(mapView).apply {
                                             position = geoPoint
                                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
@@ -639,8 +451,7 @@ fun MapScreen(
                                         mapView?.overlays?.add(marker)
                                         currentMarker = marker
                                         mapView?.invalidate()
-
-                                        // Clear search results
+                                        
                                         searchResults = emptyList()
                                         searchQuery = ""
                                     }
@@ -651,11 +462,18 @@ fun MapScreen(
                     }
                 }
 
-                if (isSearching) {
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                // Error message display (if needed)
+                searchError?.let { error ->
+                    val errorText = when (error.type) {
+                        SearchErrorType.NETWORK -> stringResource(R.string.map_search_error_network)
+                        SearchErrorType.RATE_LIMITED -> stringResource(R.string.map_search_error_rate_limited)
+                        else -> stringResource(R.string.map_search_error_unknown)
+                    }
+                    Text(
+                        text = errorText,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                     )
                 }
             }

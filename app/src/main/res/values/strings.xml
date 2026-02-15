@@ -39,6 +39,9 @@
     <string name="settings_stride_length_value">%1$d cm</string>
     <string name="settings_data">Data Management</string>
     <string name="settings_clear_destinations">Clear all destinations</string>
+    <string name="settings_compass_type">Compass image</string>
+    <string name="settings_compass_type01">Design 01</string>
+    <string name="settings_compass_type02">Design 02</string>
 
     <!-- Compass -->
     <string name="compass_heading">%1$d°</string>

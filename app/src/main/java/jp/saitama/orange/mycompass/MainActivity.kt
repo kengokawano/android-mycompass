@@ -129,6 +129,7 @@ fun CompassApp(
     val sensorAccuracy by compassViewModel.sensorAccuracy.collectAsState()
     val declinationDeg by compassViewModel.declinationDeg.collectAsState()
     val useTrueNorth by settingsViewModel.useTrueNorth.collectAsState()
+    val compassType by settingsViewModel.compassType.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // Update destinations in compass viewmodel when location or destinations change
@@ -222,7 +223,8 @@ fun CompassApp(
                     useTrueNorth = useTrueNorth,
                     declinationDeg = declinationDeg,
                     distanceUnit = settingsViewModel.distanceUnit.collectAsState().value,
-                    strideLengthCm = settingsViewModel.strideLengthCm.collectAsState().value
+                    strideLengthCm = settingsViewModel.strideLengthCm.collectAsState().value,
+                    compassType = compassType
                 )
             }
         }
