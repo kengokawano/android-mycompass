@@ -13,8 +13,8 @@ android {
         applicationId = "jp.saitama.orange.mycompass"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.03"
+        versionCode = 6
+        versionName = "1.04"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -75,6 +75,9 @@ dependencies {
 
     // Google Play Services Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // androidx.fragment: play-services が推移的に引き込む古い 1.1.0 を上書き
+    implementation("androidx.fragment:fragment:1.8.9")
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
